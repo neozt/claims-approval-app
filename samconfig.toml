@@ -3,7 +3,7 @@
 version = 0.1
 
 [default.global.parameters]
-stack_name = "test-app"
+stack_name = "claims-approval-app"
 region = "ap-southeast-1"
 
 [default.build.parameters]
@@ -17,8 +17,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "test-app"
-region = "ap-southeast-1"
+s3_prefix = "claims-approval-app"
 image_repositories = []
 
 [default.package.parameters]

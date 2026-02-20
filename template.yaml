@@ -1,119 +1,53 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Expense Claim Approval System
 
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
-AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  test-app
-
-# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
-Transform:
-- AWS::Serverless-2016-10-31
-
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: get-all-items.js
-  getAllItemsFunction:
+  # 1. The Lambda Function
+  ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Handler: src/handlers/approve-claims.handler
       Runtime: nodejs24.x
       Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
+        - arm64
+#      Policies:
+#        # Give the Lambda permission to call Step Functions
+#        - StepFunctionsExecutionStatusPolicy:
+#            StateMachineArn: !Ref ClaimsApprovalStateMachine
       Events:
-        Api:
+        # 2. The API Gateway (Implicitly created)
+        ApproveApi:
           Type: Api
           Properties:
-            Path: /
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: get-by-id.js
-  getByIdFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
-      Runtime: nodejs24.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
-      Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
+            Path: /approve
+            Method: get
+        RejectApi:
           Type: Api
           Properties:
-            Path: /{id}
-            Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+            Path: /reject
+            Method: get
 
-  # This is a Lambda function config associated with the source code: put-item.js
-  putItemFunction:
-    Type: AWS::Serverless::Function
+  # 3. The Step Function (State Machine)
+  ClaimsApprovalStateMachine:
+    Type: AWS::Serverless::StateMachine
     Properties:
-      Handler: src/handlers/put-item.putItemHandler
-      Runtime: nodejs24.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      # Keep your ASL in a separate file for cleanliness
+      DefinitionUri: statemachine/claims_approval_process.asl.json
+      DefinitionSubstitutions:
+        # This replaces placeholders in your ASL with real ARNs
+        SnsTopicArn: !Ref ClaimsApprovalTopic
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Environment:
-        Variables:
-          # Make table name accessible as environment variable from function code during execution
-          SAMPLE_TABLE: !Ref SampleTable
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: POST
-  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt ClaimsApprovalTopic.TopicName
 
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
+  # 4. The SNS Topic
+  ClaimsApprovalTopic:
+    Type: AWS::SNS::Topic
     Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+      TopicName: ClaimsApprovalTopic
 
 Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/"
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
