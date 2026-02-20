@@ -25,37 +25,28 @@
       "Arguments": {
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
-          "originalClaim": "{% $states.input %}",
           "message": "Approval needed for claim.",
+          "originalClaim": "{% $states.input %}",
           "approvalLink": "{% '${API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
           "rejectionLink": "{% '${API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
         }
       },
       "Output": "{% { 'originalClaims': $states.input, 'approvalResults': $states.result } %}",
-      "Next": "Notify Claims Approved",
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "States.TaskFailed"
-          ],
-          "Output": "{% { 'originalClaims': $states.input, 'approvalResults': $states.errorOutput } %}",
-          "Next": "Notify Claims Rejected"
-        }
-      ]
+      "Next": "Claim Approved?"
     },
 
-    "Notify Claims Rejected": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::sns:publish",
-      "Arguments": {
-        "TopicArn": "${SNS_TOPIC_ARN}",
-        "Message": {
-          "claimDetails": "{% $states.input.originalClaims %}",
-          "results": "{% $states.input.approvalResults %}",
-          "message": "The claim has been officially approved."
+    "Claim Approved?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Notify Claims Approved",
+          "Condition": "{% $states.input.approvalResults.status = 'APPROVED' %}"
+        },
+        {
+          "Next": "Notify Claims Rejected",
+          "Condition": "{% $states.input.approvalResults.status = 'REJECTED' %}"
         }
-      },
-      "End": true
+      ]
     },
 
     "Notify Claims Approved": {
@@ -64,9 +55,23 @@
       "Arguments": {
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
-          "claimDetails": "{% $states.input.originalClaims %}",
+          "message": "The claim has been officially approved.",
           "results": "{% $states.input.approvalResults %}",
-          "message": "The claim has been officially approved."
+          "claimDetails": "{% $states.input.originalClaims %}"
+        }
+      },
+      "End": true
+    },
+
+    "Notify Claims Rejected": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Arguments": {
+        "TopicArn": "${SNS_TOPIC_ARN}",
+        "Message": {
+          "message": "The claim has been rejected.",
+          "results": "{% $states.input.approvalResults %}",
+          "claimDetails": "{% $states.input.originalClaims %}"
         }
       },
       "End": true

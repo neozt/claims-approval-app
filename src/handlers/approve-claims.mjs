@@ -26,7 +26,7 @@ export const handler = async (event) => {
         if (isApproval) {
             const output = JSON.stringify({
                 status: "APPROVED",
-                approverEmail: "manager@company.com", // In a real app, extract from a JWT/Session
+                approverEmail: "manager@company.com",
                 decisionDate: new Date().toISOString()
             });
 
@@ -39,10 +39,15 @@ export const handler = async (event) => {
         }
 
         else if (isRejection) {
-            await sfnClient.send(new SendTaskFailureCommand({
+            const output = JSON.stringify({
+                status: "REJECTED",
+                approverEmail: "manager@company.com",
+                decisionDate: new Date().toISOString()
+            });
+
+            await sfnClient.send(new SendTaskSuccessCommand({
                 taskToken: taskToken,
-                error: "ManagerRejectedException",
-                cause: "The manager clicked the rejection link in the automated email."
+                output: output
             }));
 
             return respondHtml("Rejected", "Expense Declined", "#e74c3c");
