@@ -16,10 +16,13 @@ Resources:
       Runtime: nodejs24.x
       Architectures:
         - arm64
-#      Policies:
-#        # Give the Lambda permission to call Step Functions
-#        - StepFunctionsExecutionStatusPolicy:
-#            StateMachineArn: !Ref ClaimsApprovalStateMachine
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:SendTaskSuccess
+                - states:SendTaskFailure
+              Resource: "*"
       Events:
         # 2. The API Gateway (Implicitly created)
         ApproveApi:
