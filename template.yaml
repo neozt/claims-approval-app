@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Expense Claim Approval System
 
+Parameters:
+  AppStage:
+    Type: String
+    Default: Prod
+
 Resources:
   # 1. The Lambda Function
   ApproveClaimsFunction:
@@ -35,8 +40,8 @@ Resources:
       # Keep your ASL in a separate file for cleanliness
       DefinitionUri: statemachine/claims_approval_process.asl.json
       DefinitionSubstitutions:
-        # This replaces placeholders in your ASL with real ARNs
-        SnsTopicArn: !Ref ClaimsApprovalTopic
+        SNS_TOPIC_ARN: !Ref ClaimsApprovalTopic
+        API_BASE_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ClaimsApprovalTopic.TopicName
@@ -50,4 +55,4 @@ Resources:
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}/"

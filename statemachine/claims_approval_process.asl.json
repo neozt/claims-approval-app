@@ -16,12 +16,12 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish.waitForTaskToken",
       "Arguments": {
-        "TopicArn": "arn:aws:sns:ap-southeast-1:050752652859:MyTestEmailTopic",
+        "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "originalClaim": "{% $states.input %}",
           "message": "Approval needed for claim.",
-          "approvalLink": "{% 'https://8rs183ah6h.execute-api.ap-southeast-1.amazonaws.com/default/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
-          "rejectionLink": "{% 'https://8rs183ah6h.execute-api.ap-southeast-1.amazonaws.com/default/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
+          "approvalLink": "{% '${API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
+          "rejectionLink": "{% '${API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
         }
       },
       "Output": "{% { 'originalClaims': $states.input, 'approvalResults': $states.result } %}",
@@ -40,7 +40,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Arguments": {
-        "TopicArn": "arn:aws:sns:ap-southeast-1:050752652859:MyTestEmailTopic",
+        "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "claimDetails": "{% $states.input.originalClaims %}",
           "results": "{% $states.input.approvalResults %}",
@@ -53,7 +53,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Arguments": {
-        "TopicArn": "arn:aws:sns:ap-southeast-1:050752652859:MyTestEmailTopic",
+        "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "claimDetails": "{% $states.input.originalClaims %}",
           "results": "{% $states.input.approvalResults %}",
