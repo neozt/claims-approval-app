@@ -8,6 +8,18 @@ Parameters:
     Default: Prod
 
 Resources:
+  SubmissionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SubmissionApi
+      StageName: !Ref AppStage
+
+  ApprovalApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ApprovalApi
+      StageName: !Ref AppStage
+
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -20,7 +32,6 @@ Resources:
             - Effect: Allow
               Action:
                 - states:SendTaskSuccess
-                - states:SendTaskFailure
               Resource: "*"
       Events:
         ApproveApi:
@@ -28,11 +39,13 @@ Resources:
           Properties:
             Path: /approve
             Method: get
+            RestApiId: !Ref ApprovalApi
         RejectApi:
           Type: Api
           Properties:
             Path: /reject
             Method: get
+            RestApiId: !Ref ApprovalApi
 
   ClaimsApprovalStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -40,10 +53,17 @@ Resources:
       DefinitionUri: statemachines/claims_approval_process.asl.json
       DefinitionSubstitutions:
         SNS_TOPIC_ARN: !Ref ClaimsApprovalTopic
-        API_BASE_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
+        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ClaimsApprovalTopic.TopicName
+      Events:
+        SubmitApi:
+          Type: Api
+          Properties:
+            Path: /submit
+            Method: post
+            RestApiId: !Ref SubmissionApi
 
   ClaimsApprovalTopic:
     Type: AWS::SNS::Topic
@@ -51,6 +71,6 @@ Resources:
       TopicName: ClaimsApprovalTopic
 
 Outputs:
-  ApiUrl:
-    Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}/"
+  SubmitApiUrl:
+    Description: "Submission API Gateway URL"
+    Value: !Sub "https://${SubmissionApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}/"

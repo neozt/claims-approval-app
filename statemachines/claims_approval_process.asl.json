@@ -27,8 +27,8 @@
         "Message": {
           "message": "Approval needed for claim.",
           "originalClaim": "{% $states.input %}",
-          "approvalLink": "{% '${API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
-          "rejectionLink": "{% '${API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
+          "approvalLink": "{% '${APPROVAL_API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
+          "rejectionLink": "{% '${APPROVAL_API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
         }
       },
       "Output": "{% { 'originalClaims': $states.input, 'approvalResults': $states.result } %}",
@@ -55,7 +55,7 @@
       "Arguments": {
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
-          "message": "The claim has been officially approved.",
+          "message": "The claim has been approved.",
           "results": "{% $states.input.approvalResults %}",
           "claimDetails": "{% $states.input.originalClaims %}"
         }
