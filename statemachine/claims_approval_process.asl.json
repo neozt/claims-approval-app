@@ -1,8 +1,8 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Choice",
+  "StartAt": "Require Manual Approval?",
   "States": {
-    "Choice": {
+    "Require Manual Approval?": {
       "Type": "Choice",
       "Choices": [
         {
@@ -10,8 +10,15 @@
           "Condition": "{% ($states.input.amount) > (100) %}"
         }
       ],
-      "Default": "Notify Claims Approved"
+      "Default": "Auto Approve"
     },
+
+    "Auto Approve": {
+      "Type": "Pass",
+      "Output": "{% {'originalClaims': $states.input, 'approvalResults': { 'status': 'AUTO-APPROVED', 'reason': 'Amount under $100' }} %}",
+      "Next": "Notify Claims Approved"
+    },
+
     "Wait for Approval": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish.waitForTaskToken",
@@ -36,6 +43,7 @@
         }
       ]
     },
+
     "Notify Claims Rejected": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
@@ -49,6 +57,7 @@
       },
       "End": true
     },
+
     "Notify Claims Approved": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
