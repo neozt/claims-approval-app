@@ -8,11 +8,10 @@ Parameters:
     Default: Prod
 
 Resources:
-  # 1. The Lambda Function
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/approve-claims.handler
+      Handler: functions/handlers/approve-claims.handler
       Runtime: nodejs24.x
       Architectures:
         - arm64
@@ -24,7 +23,6 @@ Resources:
                 - states:SendTaskFailure
               Resource: "*"
       Events:
-        # 2. The API Gateway (Implicitly created)
         ApproveApi:
           Type: Api
           Properties:
@@ -36,12 +34,10 @@ Resources:
             Path: /reject
             Method: get
 
-  # 3. The Step Function (State Machine)
   ClaimsApprovalStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      # Keep your ASL in a separate file for cleanliness
-      DefinitionUri: statemachine/claims_approval_process.asl.json
+      DefinitionUri: statemachines/claims_approval_process.asl.json
       DefinitionSubstitutions:
         SNS_TOPIC_ARN: !Ref ClaimsApprovalTopic
         API_BASE_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
@@ -49,7 +45,6 @@ Resources:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ClaimsApprovalTopic.TopicName
 
-  # 4. The SNS Topic
   ClaimsApprovalTopic:
     Type: AWS::SNS::Topic
     Properties:
