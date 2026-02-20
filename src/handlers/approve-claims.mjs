@@ -1,4 +1,4 @@
-import { SFNClient, SendTaskSuccessCommand, SendTaskFailureCommand } from "@aws-sdk/client-sfn";
+import { SFNClient, SendTaskSuccessCommand } from "@aws-sdk/client-sfn";
 
 const sfnClient = new SFNClient({});
 
@@ -6,14 +6,11 @@ export const handler = async (event) => {
     console.log("Received event:", JSON.stringify(event));
 
     try {
-        // 1. Extract the token from query parameters
         const taskToken = event.queryStringParameters?.token;
 
-        // 2. Identify the action based on the URL path
-        // Supports both REST API (event.path) and HTTP API (event.rawPath)
         const path = event.rawPath || event.path || "";
-        const isApproval = path.includes("approve");
-        const isRejection = path.includes("reject");
+        const isApproval = path.includes("/approve");
+        const isRejection = path.includes("/reject");
 
         if (!taskToken) {
             return {
@@ -22,11 +19,10 @@ export const handler = async (event) => {
             };
         }
 
-        // 3. Branching Logic
         if (isApproval) {
             const output = JSON.stringify({
                 status: "APPROVED",
-                approverEmail: "manager@company.com",
+                approverEmail: "manager@company.com", // TODO
                 decisionDate: new Date().toISOString()
             });
 
@@ -36,12 +32,10 @@ export const handler = async (event) => {
             }));
 
             return respondHtml("Success", "Expense Approved", "#2ecc71");
-        }
-
-        else if (isRejection) {
+        } else if (isRejection) {
             const output = JSON.stringify({
                 status: "REJECTED",
-                approverEmail: "manager@company.com",
+                approverEmail: "manager@company.com", // TODO
                 decisionDate: new Date().toISOString()
             });
 
@@ -51,14 +45,12 @@ export const handler = async (event) => {
             }));
 
             return respondHtml("Rejected", "Expense Declined", "#e74c3c");
+        } else {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: "Invalid endpoint. Use /approve or /reject." }),
+            };
         }
-
-        // 4. Fallback for unknown paths
-        return {
-            statusCode: 404,
-            body: JSON.stringify({ message: "Invalid endpoint. Use /approve or /reject." }),
-        };
-
     } catch (error) {
         console.error("Step Function Callback Error:", error);
 
@@ -71,9 +63,6 @@ export const handler = async (event) => {
     }
 };
 
-/**
- * Helper to return a simple, styled HTML response for the manager's browser
- */
 function respondHtml(title, message, color) {
     return {
         statusCode: 200,
