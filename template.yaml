@@ -77,6 +77,14 @@ Resources:
     Properties:
       TopicName: !Sub "${AWS::StackName}-ClaimsNotificationTopic"
 
+  # Replace with your own email
+#  ClaimsNotificationTopicSubscription1:
+#    Type: AWS::SNS::Subscription
+#    Properties:
+#      Endpoint: test@example.com
+#      Protocol: email
+#      TopicArn: !Ref ClaimsNotificationTopic
+
 Outputs:
   SubmitApiUrl:
     Description: "Submission API Gateway URL"
