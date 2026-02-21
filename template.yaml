@@ -8,18 +8,33 @@ Parameters:
     Default: Prod
 
 Resources:
+  # Step function to orchestrate the whole claims submission and approval flow
+  ClaimsApprovalStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachines/claims_approval_process.asl.json
+      DefinitionSubstitutions:
+        SNS_TOPIC_ARN: !Ref ClaimsNotificationTopic
+        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt ClaimsNotificationTopic.TopicName
+      Events:
+        SubmitApi:
+          Type: Api
+          Properties:
+            Path: /submit
+            Method: post
+            RestApiId: !Ref SubmissionApi
+
+  # API Gateway to submit claims via triggering the ClaimsApprovalStateMachine
   SubmissionApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: SubmissionApi
       StageName: !Ref AppStage
 
-  ApprovalApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: ApprovalApi
-      StageName: !Ref AppStage
-
+  # Lambda function to handle manual approvals and rejections
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -47,28 +62,18 @@ Resources:
             Method: get
             RestApiId: !Ref ApprovalApi
 
-  ClaimsApprovalStateMachine:
-    Type: AWS::Serverless::StateMachine
+  # API gateway to trigger ApproveClaimsFunction
+  ApprovalApi:
+    Type: AWS::Serverless::Api
     Properties:
-      DefinitionUri: statemachines/claims_approval_process.asl.json
-      DefinitionSubstitutions:
-        SNS_TOPIC_ARN: !Ref ClaimsApprovalTopic
-        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
-      Policies:
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt ClaimsApprovalTopic.TopicName
-      Events:
-        SubmitApi:
-          Type: Api
-          Properties:
-            Path: /submit
-            Method: post
-            RestApiId: !Ref SubmissionApi
+      Name: ApprovalApi
+      StageName: !Ref AppStage
 
-  ClaimsApprovalTopic:
+  # SNS topic to notify when claims submitted, approved and rejected
+  ClaimsNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: ClaimsApprovalTopic
+      TopicName: ClaimsNotificationTopic
 
 Outputs:
   SubmitApiUrl:
