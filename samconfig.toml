@@ -19,7 +19,7 @@ confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "claims-approval-app"
 image_repositories = []
-parameter_overrides = "AppStage=\"Prod\""
+parameter_overrides = "Environment=\"Local\""
 
 [default.package.parameters]
 resolve_s3 = true
@@ -32,3 +32,28 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+
+[prod.deploy.parameters]
+stack_name = "claims-approval-app-prod"
+resolve_s3 = true
+s3_prefix = "claims-approval-app-prod"
+region = "ap-southeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "Environment=Prod"
+tags = "Environment=\"Prod\""
+
+[prod.global.parameters]
+region = "ap-southeast-1"
+
+[dev.deploy.parameters]
+stack_name = "claims-approval-app-dev"
+resolve_s3 = true
+s3_prefix = "claims-approval-app-dev"
+region = "ap-southeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "Environment=Dev"
+tags = "Environment=\"Dev\""

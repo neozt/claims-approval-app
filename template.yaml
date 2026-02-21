@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Expense Claim Approval System
 
 Parameters:
-  AppStage:
+  Environment:
     Type: String
     Default: Prod
 
@@ -12,10 +12,11 @@ Resources:
   ClaimsApprovalStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
+      Name: !Sub "${AWS::StackName}-ClaimsApprovalStateMachine"
       DefinitionUri: statemachines/claims_approval_process.asl.json
       DefinitionSubstitutions:
         SNS_TOPIC_ARN: !Ref ClaimsNotificationTopic
-        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}"
+        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ClaimsNotificationTopic.TopicName
@@ -31,13 +32,14 @@ Resources:
   SubmissionApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: SubmissionApi
-      StageName: !Ref AppStage
+      Name: !Sub "${AWS::StackName}-SubmissionApi"
+      StageName: !Ref Environment
 
   # Lambda function to handle manual approvals and rejections
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "${AWS::StackName}-ApproveClaimsFunction"
       Handler: functions/handlers/approve-claims.handler
       Runtime: nodejs24.x
       Architectures:
@@ -66,16 +68,16 @@ Resources:
   ApprovalApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: ApprovalApi
-      StageName: !Ref AppStage
+      Name: !Sub "${AWS::StackName}-ApprovalApi"
+      StageName: !Ref Environment
 
   # SNS topic to notify when claims submitted, approved and rejected
   ClaimsNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: ClaimsNotificationTopic
+      TopicName: !Sub "${AWS::StackName}-ClaimsNotificationTopic"
 
 Outputs:
   SubmitApiUrl:
     Description: "Submission API Gateway URL"
-    Value: !Sub "https://${SubmissionApi}.execute-api.${AWS::Region}.amazonaws.com/${AppStage}/"
+    Value: !Sub "https://${SubmissionApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
