@@ -1,24 +1,34 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Require Manual Approval?",
+  "StartAt": "Assign Claim Details",
   "States": {
+    "Assign Claim Details": {
+      "Type": "Pass",
+      "Assign": {
+        "claimDetails": "{% $states.input %}"
+      },
+      "Next": "Require Manual Approval?"
+    },
     "Require Manual Approval?": {
       "Type": "Choice",
       "Choices": [
         {
           "Next": "Wait for Approval",
-          "Condition": "{% ($states.input.amount) > (100) %}"
+          "Condition": "{% ($claimDetails.amount) > (100) %}"
         }
       ],
       "Default": "Auto Approve"
     },
-
     "Auto Approve": {
       "Type": "Pass",
-      "Output": "{% {'originalClaims': $states.input, 'approvalResults': { 'status': 'AUTO-APPROVED', 'reason': 'Amount under $100' }} %}",
+      "Assign": {
+        "approvalResults": {
+          "status": "AUTO-APPROVED",
+          "reason": "Amount under $100"
+        }
+      },
       "Next": "Notify Claims Approved"
     },
-
     "Wait for Approval": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish.waitForTaskToken",
@@ -26,29 +36,29 @@
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "message": "Approval needed for claim.",
-          "originalClaim": "{% $states.input %}",
+          "originalClaim": "{% $claimDetails %}",
           "approvalLink": "{% '${APPROVAL_API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
           "rejectionLink": "{% '${APPROVAL_API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
         }
       },
-      "Output": "{% { 'originalClaims': $states.input, 'approvalResults': $states.result } %}",
+      "Assign": {
+        "approvalResults": "{% $states.result %}"
+      },
       "Next": "Claim Approved?"
     },
-
     "Claim Approved?": {
       "Type": "Choice",
       "Choices": [
         {
           "Next": "Notify Claims Approved",
-          "Condition": "{% $states.input.approvalResults.status = 'APPROVED' %}"
+          "Condition": "{% $approvalResults.status = 'APPROVED' %}"
         },
         {
           "Next": "Notify Claims Rejected",
-          "Condition": "{% $states.input.approvalResults.status = 'REJECTED' %}"
+          "Condition": "{% $approvalResults.status = 'REJECTED' %}"
         }
       ]
     },
-
     "Notify Claims Approved": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
@@ -56,13 +66,12 @@
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "message": "The claim has been approved.",
-          "results": "{% $states.input.approvalResults %}",
-          "claimDetails": "{% $states.input.originalClaims %}"
+          "results": "{% $approvalResults %}",
+          "claimDetails": "{% $claimDetails %}"
         }
       },
       "End": true
     },
-
     "Notify Claims Rejected": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
@@ -70,8 +79,8 @@
         "TopicArn": "${SNS_TOPIC_ARN}",
         "Message": {
           "message": "The claim has been rejected.",
-          "results": "{% $states.input.approvalResults %}",
-          "claimDetails": "{% $states.input.originalClaims %}"
+          "results": "{% $approvalResults %}",
+          "claimDetails": "{% $claimDetails %}"
         }
       },
       "End": true
