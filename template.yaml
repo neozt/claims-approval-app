@@ -71,13 +71,35 @@ Resources:
             Method: post
             RestApiId: !Ref ClaimsApi
 
+  ListPendingClaimsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-ListPendingClaimsFunction"
+      Handler: functions/handlers/list-pending-claims.handler
+      Runtime: nodejs24.x
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ClaimsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+      Events:
+        ListPendingClaimsApi:
+          Type: Api
+          Properties:
+            Path: /claims/pending-claims
+            Method: get
+            RestApiId: !Ref ClaimsApi
+
   # SNS topic to notify when claims submitted, approved and rejected
   ClaimsNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub "${AWS::StackName}-ClaimsNotificationTopic"
 
-  # DynamoDB table to store claims and their task tokens
+  # DynamoDB table to store claim details
   ClaimsTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
