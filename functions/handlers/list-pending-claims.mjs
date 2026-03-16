@@ -18,6 +18,7 @@ export const handler = async (event) => {
                     S: "PENDING_APPROVE"
                 }
             },
+            ProjectionExpression: "#status, claimId, claimDetails"
         });
 
         const result = await dynamoClient.send(scanItemCommand);
