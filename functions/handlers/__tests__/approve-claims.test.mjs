@@ -53,7 +53,7 @@ describe('approve-claims handler', () => {
     it('should approve path including /approve', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                task_token: { S: 'sample-token' }
+                taskToken: { S: 'sample-token' }
             }
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
@@ -81,7 +81,7 @@ describe('approve-claims handler', () => {
     it('should reject path including /reject', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                task_token: { S: 'sample-token' }
+                taskToken: { S: 'sample-token' }
             }
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
@@ -109,7 +109,7 @@ describe('approve-claims handler', () => {
     it('should return 404 for invalid endpoint', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                task_token: { S: 'sample-token' }
+                taskToken: { S: 'sample-token' }
             }
         });
 
@@ -126,7 +126,7 @@ describe('approve-claims handler', () => {
     it('should return 500 on SFNClient error', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                task_token: { S: 'sample-token' }
+                taskToken: { S: 'sample-token' }
             }
         });
 

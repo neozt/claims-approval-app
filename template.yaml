@@ -103,9 +103,9 @@ Resources:
   ClaimsTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: !Sub "${AWS::StackName}-ClaimsTable"
+#      TableName: !Sub "${AWS::StackName}-ClaimsTable"
       PrimaryKey:
-        Name: claim_id
+        Name: claimId
         Type: String
 
   # Replace with your own email

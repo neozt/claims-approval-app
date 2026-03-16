@@ -6,7 +6,7 @@
       "Type": "Pass",
       "Assign": {
         "claimDetails": "{% $states.input %}",
-        "claim_id": "{% $uuid() %}"
+        "claimId": "{% $uuid() %}"
       },
       "Next": "Require Manual Approval?"
     },
@@ -26,16 +26,16 @@
       "Arguments": {
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Item": {
-          "claim_id": {
-            "S": "{% $claim_id %}"
+          "claimId": {
+            "S": "{% $claimId %}"
           },
           "status": {
             "S": "APPROVED"
           },
-          "auto_approved": {
+          "autoApproved": {
             "BOOL": true
           },
-          "claim_details": {
+          "claimDetails": {
             "S": "{% $string($claimDetails) %}"
           }
         }
@@ -54,16 +54,16 @@
       "Arguments": {
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Item": {
-          "claim_id": {
-            "S": "{% $claim_id %}"
+          "claimId": {
+            "S": "{% $claimId %}"
           },
           "status": {
             "S": "PENDING_APPROVE"
           },
-          "task_token": {
+          "taskToken": {
             "S": "{% $states.context.Task.Token %}"
           },
-          "claim_details": {
+          "claimDetails": {
             "S": "{% $string($claimDetails) %}"
           }
         }
@@ -92,8 +92,8 @@
       "Arguments": {
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Key": {
-          "claim_id": {
-            "S": "{% $claim_id %}"
+          "claimId": {
+            "S": "{% $claimId %}"
           }
         },
         "UpdateExpression": "SET #status = :status",
@@ -114,8 +114,8 @@
       "Arguments": {
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Key": {
-          "claim_id": {
-            "S": "{% $claim_id %}"
+          "claimId": {
+            "S": "{% $claimId %}"
           }
         },
         "UpdateExpression": "SET #status = :status",
@@ -139,7 +139,7 @@
           "message": "The claim has been approved.",
           "results": "{% $approvalResults %}",
           "claimDetails": "{% $claimDetails %}",
-          "claim_id": "{% $claim_id %}"
+          "claimId": "{% $claimId %}"
         }
       },
       "End": true
@@ -153,7 +153,7 @@
           "message": "The claim has been rejected.",
           "results": "{% $approvalResults %}",
           "claimDetails": "{% $claimDetails %}",
-          "claim_id": "{% $claim_id %}"
+          "claimId": "{% $claimId %}"
         }
       },
       "End": true

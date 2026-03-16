@@ -32,20 +32,20 @@ export const handler = async (event) => {
         const getItemCommand = new GetItemCommand({
             TableName: tableName,
             Key: {
-                "claim_id": {S: claimId}
+                "claimId": {S: claimId}
             }
         });
 
         const ddbResult = await dynamoClient.send(getItemCommand);
 
-        if (!ddbResult.Item || !ddbResult.Item.task_token || !ddbResult.Item.task_token.S) {
+        if (!ddbResult.Item || !ddbResult.Item.taskToken || !ddbResult.Item.taskToken.S) {
             return {
                 statusCode: 404,
                 body: JSON.stringify({message: "Claim not found or task token missing."}),
             };
         }
 
-        const taskToken = ddbResult.Item.task_token.S;
+        const taskToken = ddbResult.Item.taskToken.S;
 
         if (isApproval) {
             const output = JSON.stringify({
