@@ -98,64 +98,45 @@
       "Assign": {
         "approvalResults": "{% $states.result %}"
       },
+      "Next": "Update Approval Results"
+    },
+    "Update Approval Results": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Key": {
+          "claimId": {
+            "S": "{% $claimDetails.claimId %}"
+          }
+        },
+        "UpdateExpression": "SET #status = :status, decisionDate = :decisionDate",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
+            "S": "{% $approvalResults.status %}"
+          },
+          ":decisionDate": {
+            "S": "{% $approvalResults.decisionDate %}"
+          }
+        }
+      },
       "Next": "Claim Approved?"
     },
     "Claim Approved?": {
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Update DDB Approved",
+          "Next": "Notify Claims Approved",
           "Condition": "{% $approvalResults.status = 'APPROVED' %}"
         },
         {
-          "Next": "Update DDB Rejected",
+          "Next": "Notify Claims Rejected",
           "Condition": "{% $approvalResults.status = 'REJECTED' %}"
         }
       ]
-    },
-    "Update DDB Approved": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
-      "Arguments": {
-        "TableName": "${DYNAMODB_TABLE_NAME}",
-        "Key": {
-          "claimId": {
-            "S": "{% $claimDetails.claimId %}"
-          }
-        },
-        "UpdateExpression": "SET #status = :status",
-        "ExpressionAttributeNames": {
-          "#status": "status"
-        },
-        "ExpressionAttributeValues": {
-          ":status": {
-            "S": "APPROVED"
-          }
-        }
-      },
-      "Next": "Notify Claims Approved"
-    },
-    "Update DDB Rejected": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::dynamodb:updateItem",
-      "Arguments": {
-        "TableName": "${DYNAMODB_TABLE_NAME}",
-        "Key": {
-          "claimId": {
-            "S": "{% $claimDetails.claimId %}"
-          }
-        },
-        "UpdateExpression": "SET #status = :status",
-        "ExpressionAttributeNames": {
-          "#status": "status"
-        },
-        "ExpressionAttributeValues": {
-          ":status": {
-            "S": "REJECTED"
-          }
-        }
-      },
-      "Next": "Notify Claims Rejected"
     },
     "Notify Claims Approved": {
       "Type": "Task",
