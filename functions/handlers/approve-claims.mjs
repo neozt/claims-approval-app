@@ -1,23 +1,44 @@
 import { SFNClient, SendTaskSuccessCommand } from "@aws-sdk/client-sfn";
+import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 
 const sfnClient = new SFNClient({});
+const dynamoClient = new DynamoDBClient({});
 
 export const handler = async (event) => {
     console.log("Received event:", JSON.stringify(event));
 
     try {
-        const taskToken = event.queryStringParameters?.token;
+        const claimId = event.pathParameters?.claimId;
 
         const path = event.rawPath || event.path || "";
         const isApproval = path.includes("/approve");
         const isRejection = path.includes("/reject");
 
-        if (!taskToken) {
+        if (!claimId) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ message: "Missing taskToken in query string." }),
+                body: JSON.stringify({ message: "Missing claimId in path." }),
             };
         }
+
+        const tableName = process.env.DYNAMODB_TABLE_NAME;
+        const getItemCommand = new GetItemCommand({
+            TableName: tableName,
+            Key: {
+                "claim_id": { S: claimId }
+            }
+        });
+        
+        const ddbResult = await dynamoClient.send(getItemCommand);
+
+        if (!ddbResult.Item || !ddbResult.Item.task_token || !ddbResult.Item.task_token.S) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: "Claim not found or task token missing." }),
+            };
+        }
+
+        const taskToken = ddbResult.Item.task_token.S;
 
         if (isApproval) {
             const output = JSON.stringify({

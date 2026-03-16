@@ -44,23 +44,28 @@ Resources:
       Runtime: nodejs24.x
       Architectures:
         - arm64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ClaimsTable
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - states:SendTaskSuccess
               Resource: "*"
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
       Events:
         ApproveApi:
           Type: Api
           Properties:
-            Path: /approve
+            Path: /approve/{claimId}
             Method: get
             RestApiId: !Ref ApprovalApi
         RejectApi:
           Type: Api
           Properties:
-            Path: /reject
+            Path: /reject/{claimId}
             Method: get
             RestApiId: !Ref ApprovalApi
 
