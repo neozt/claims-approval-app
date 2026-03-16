@@ -16,10 +16,12 @@ Resources:
       DefinitionUri: statemachines/claims_approval_process.asl.json
       DefinitionSubstitutions:
         SNS_TOPIC_ARN: !Ref ClaimsNotificationTopic
-        APPROVAL_API_BASE_URL: !Sub "https://${ApprovalApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+        DYNAMODB_TABLE_NAME: !Ref ClaimsTable
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt ClaimsNotificationTopic.TopicName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
       Events:
         SubmitApi:
           Type: Api
