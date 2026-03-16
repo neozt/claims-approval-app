@@ -8,6 +8,13 @@ Parameters:
     Default: Prod
 
 Resources:
+  # API Gateway to submit claims via triggering the ClaimsApprovalStateMachine
+  ClaimsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "${AWS::StackName}-ClaimsApi"
+      StageName: !Ref Environment
+
   # Step function to orchestrate the whole claims submission and approval flow
   ClaimsApprovalStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -22,6 +29,25 @@ Resources:
             TopicName: !GetAtt ClaimsNotificationTopic.TopicName
         - DynamoDBCrudPolicy:
             TableName: !Ref ClaimsTable
+
+  # Lambda function to handle submitting claims
+  SubmitClaimsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-SubmitClaimsFunction"
+      Handler: functions/handlers/submit-claim.handler
+      Runtime: nodejs24.x
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref ClaimsApprovalStateMachine
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource: !Ref ClaimsApprovalStateMachine
       Events:
         SubmitApi:
           Type: Api
@@ -30,19 +56,12 @@ Resources:
             Method: post
             RestApiId: !Ref ClaimsApi
 
-  # API Gateway to submit claims via triggering the ClaimsApprovalStateMachine
-  ClaimsApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub "${AWS::StackName}-ClaimsApi"
-      StageName: !Ref Environment
-
   # Lambda function to handle manual approvals and rejections
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-ApproveClaimsFunction"
-      Handler: functions/handlers/approve-claims.handler
+      Handler: functions/handlers/approve-claim.handler
       Runtime: nodejs24.x
       Architectures:
         - arm64

@@ -1,4 +1,4 @@
-import { handler } from '../approve-claims.mjs';
+import { handler } from '../approve-claim.mjs';
 import { SFNClient, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -7,7 +7,7 @@ import { jest } from '@jest/globals';
 const sfnMock = mockClient(SFNClient);
 const ddbMock = mockClient(DynamoDBClient);
 
-describe('approve-claims handler', () => {
+describe('approve-claim handler', () => {
     let dateSpy;
 
     beforeEach(() => {

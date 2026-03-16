@@ -6,7 +6,6 @@
       "Type": "Pass",
       "Assign": {
         "claimDetails": "{% $states.input %}",
-        "claimId": "{% $uuid() %}"
       },
       "Next": "Require Manual Approval?"
     },
@@ -27,7 +26,7 @@
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Item": {
           "claimId": {
-            "S": "{% $claimId %}"
+            "S": "{% $claimDetails.claimId %}"
           },
           "status": {
             "S": "APPROVED"
@@ -55,7 +54,7 @@
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Item": {
           "claimId": {
-            "S": "{% $claimId %}"
+            "S": "{% $claimDetails.claimId %}"
           },
           "status": {
             "S": "PENDING_APPROVE"
@@ -93,7 +92,7 @@
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Key": {
           "claimId": {
-            "S": "{% $claimId %}"
+            "S": "{% $claimDetails.claimId %}"
           }
         },
         "UpdateExpression": "SET #status = :status",
@@ -115,7 +114,7 @@
         "TableName": "${DYNAMODB_TABLE_NAME}",
         "Key": {
           "claimId": {
-            "S": "{% $claimId %}"
+            "S": "{% $claimDetails.claimId %}"
           }
         },
         "UpdateExpression": "SET #status = :status",
@@ -139,7 +138,7 @@
           "message": "The claim has been approved.",
           "results": "{% $approvalResults %}",
           "claimDetails": "{% $claimDetails %}",
-          "claimId": "{% $claimId %}"
+          "claimId": "{% $claimDetails.claimId %}"
         }
       },
       "End": true
@@ -153,7 +152,7 @@
           "message": "The claim has been rejected.",
           "results": "{% $approvalResults %}",
           "claimDetails": "{% $claimDetails %}",
-          "claimId": "{% $claimId %}"
+          "claimId": "{% $claimDetails.claimId %}"
         }
       },
       "End": true
