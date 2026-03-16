@@ -36,6 +36,7 @@ export const handler = async (event) => {
             claimId,
             amount,
             claimant,
+            submittedAt: new Date().toISOString(),
         }
 
         const commandInput = {

@@ -5,21 +5,11 @@
     "Assign Claim Details": {
       "Type": "Pass",
       "Assign": {
-        "claimDetails": "{% $states.input %}",
+        "claimDetails": "{% $states.input %}"
       },
-      "Next": "Require Manual Approval?"
+      "Next": "Save to DB"
     },
-    "Require Manual Approval?": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Wait for Approval",
-          "Condition": "{% ($claimDetails.amount) > (100) %}"
-        }
-      ],
-      "Default": "Auto Approve"
-    },
-    "Auto Approve": {
+    "Save to DB": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:putItem",
       "Arguments": {
@@ -29,13 +19,54 @@
             "S": "{% $claimDetails.claimId %}"
           },
           "status": {
+            "S": "PENDING_APPROVE"
+          },
+          "amount": {
+            "N": "{% $claimDetails.amount %}"
+          },
+          "claimant": {
+            "S": "{% $claimDetails.claimant %}"
+          },
+          "submittedAt": {
+            "S": "{% $claimDetails.submittedAt %}"
+          }
+        }
+      },
+      "Assign": {
+        "approvalResults": {
+          "status": "AUTO-APPROVED",
+          "reason": "Amount under $100"
+        }
+      },
+      "Next": "Require Manual Approval?"
+    },
+    "Require Manual Approval?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Wait for Approval",
+          "Condition": "{% $number($claimDetails.amount) > 100 %}"
+        }
+      ],
+      "Default": "Auto Approve"
+    },
+    "Auto Approve": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Key": {
+          "claimId": {
+            "S": "{% $claimDetails.claimId %}"
+          }
+        },
+        "UpdateExpression": "SET #status = :status",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
             "S": "APPROVED"
-          },
-          "autoApproved": {
-            "BOOL": true
-          },
-          "claimDetails": {
-            "S": "{% $string($claimDetails) %}"
           }
         }
       },
@@ -49,21 +80,18 @@
     },
     "Wait for Approval": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:dynamodb:putItem.waitForTaskToken",
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:updateItem.waitForTaskToken",
       "Arguments": {
         "TableName": "${DYNAMODB_TABLE_NAME}",
-        "Item": {
+        "Key": {
           "claimId": {
             "S": "{% $claimDetails.claimId %}"
-          },
-          "status": {
-            "S": "PENDING_APPROVE"
-          },
-          "taskToken": {
+          }
+        },
+        "UpdateExpression": "SET taskToken = :taskToken",
+        "ExpressionAttributeValues": {
+          ":taskToken": {
             "S": "{% $states.context.Task.Token %}"
-          },
-          "claimDetails": {
-            "S": "{% $string($claimDetails) %}"
           }
         }
       },
