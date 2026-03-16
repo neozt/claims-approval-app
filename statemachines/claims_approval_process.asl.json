@@ -5,7 +5,8 @@
     "Assign Claim Details": {
       "Type": "Pass",
       "Assign": {
-        "claimDetails": "{% $states.input %}"
+        "claimDetails": "{% $states.input %}",
+        "claim_id": "{% $uuid() %}"
       },
       "Next": "Require Manual Approval?"
     },
@@ -20,7 +21,25 @@
       "Default": "Auto Approve"
     },
     "Auto Approve": {
-      "Type": "Pass",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Arguments": {
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Item": {
+          "claim_id": {
+            "S": "{% $claim_id %}"
+          },
+          "status": {
+            "S": "APPROVED"
+          },
+          "auto_approved": {
+            "BOOL": true
+          },
+          "claim_details": {
+            "S": "{% $string($claimDetails) %}"
+          }
+        }
+      },
       "Assign": {
         "approvalResults": {
           "status": "AUTO-APPROVED",
@@ -31,14 +50,22 @@
     },
     "Wait for Approval": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::sns:publish.waitForTaskToken",
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:putItem.waitForTaskToken",
       "Arguments": {
-        "TopicArn": "${SNS_TOPIC_ARN}",
-        "Message": {
-          "message": "Approval needed for claim.",
-          "originalClaim": "{% $claimDetails %}",
-          "approvalLink": "{% '${APPROVAL_API_BASE_URL}/approve?token=' & $encodeUrlComponent($states.context.Task.Token) %}",
-          "rejectionLink": "{% '${APPROVAL_API_BASE_URL}/reject?token=' & $encodeUrlComponent($states.context.Task.Token) %}"
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Item": {
+          "claim_id": {
+            "S": "{% $claim_id %}"
+          },
+          "status": {
+            "S": "PENDING_APPROVE"
+          },
+          "task_token": {
+            "S": "{% $states.context.Task.Token %}"
+          },
+          "claim_details": {
+            "S": "{% $string($claimDetails) %}"
+          }
         }
       },
       "Assign": {
@@ -50,14 +77,58 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Notify Claims Approved",
+          "Next": "Update DDB Approved",
           "Condition": "{% $approvalResults.status = 'APPROVED' %}"
         },
         {
-          "Next": "Notify Claims Rejected",
+          "Next": "Update DDB Rejected",
           "Condition": "{% $approvalResults.status = 'REJECTED' %}"
         }
       ]
+    },
+    "Update DDB Approved": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Key": {
+          "claim_id": {
+            "S": "{% $claim_id %}"
+          }
+        },
+        "UpdateExpression": "SET #status = :status",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
+            "S": "APPROVED"
+          }
+        }
+      },
+      "Next": "Notify Claims Approved"
+    },
+    "Update DDB Rejected": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${DYNAMODB_TABLE_NAME}",
+        "Key": {
+          "claim_id": {
+            "S": "{% $claim_id %}"
+          }
+        },
+        "UpdateExpression": "SET #status = :status",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
+            "S": "REJECTED"
+          }
+        }
+      },
+      "Next": "Notify Claims Rejected"
     },
     "Notify Claims Approved": {
       "Type": "Task",
@@ -67,7 +138,8 @@
         "Message": {
           "message": "The claim has been approved.",
           "results": "{% $approvalResults %}",
-          "claimDetails": "{% $claimDetails %}"
+          "claimDetails": "{% $claimDetails %}",
+          "claim_id": "{% $claim_id %}"
         }
       },
       "End": true
@@ -80,7 +152,8 @@
         "Message": {
           "message": "The claim has been rejected.",
           "results": "{% $approvalResults %}",
-          "claimDetails": "{% $claimDetails %}"
+          "claimDetails": "{% $claimDetails %}",
+          "claim_id": "{% $claim_id %}"
         }
       },
       "End": true

@@ -77,6 +77,15 @@ Resources:
     Properties:
       TopicName: !Sub "${AWS::StackName}-ClaimsNotificationTopic"
 
+  # DynamoDB table to store claims and their task tokens
+  ClaimsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub "${AWS::StackName}-ClaimsTable"
+      PrimaryKey:
+        Name: claim_id
+        Type: String
+
   # Replace with your own email
 #  ClaimsNotificationTopicSubscription1:
 #    Type: AWS::SNS::Subscription
