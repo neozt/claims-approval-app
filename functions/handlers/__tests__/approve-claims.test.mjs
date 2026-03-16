@@ -13,7 +13,7 @@ describe('approve-claims handler', () => {
     beforeEach(() => {
         sfnMock.reset();
         ddbMock.reset();
-        
+
         process.env.DYNAMODB_TABLE_NAME = 'MockTable';
 
         // Mock Date to ensure deterministic outputs for tests
