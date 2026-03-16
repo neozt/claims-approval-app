@@ -26,13 +26,13 @@ Resources:
           Properties:
             Path: /submit
             Method: post
-            RestApiId: !Ref SubmissionApi
+            RestApiId: !Ref ClaimsApi
 
   # API Gateway to submit claims via triggering the ClaimsApprovalStateMachine
-  SubmissionApi:
+  ClaimsApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: !Sub "${AWS::StackName}-SubmissionApi"
+      Name: !Sub "${AWS::StackName}-ClaimsApi"
       StageName: !Ref Environment
 
   # Lambda function to handle manual approvals and rejections
@@ -61,20 +61,13 @@ Resources:
           Properties:
             Path: /approve/{claimId}
             Method: post
-            RestApiId: !Ref ApprovalApi
+            RestApiId: !Ref ClaimsApi
         RejectApi:
           Type: Api
           Properties:
             Path: /reject/{claimId}
             Method: post
-            RestApiId: !Ref ApprovalApi
-
-  # API gateway to trigger ApproveClaimsFunction
-  ApprovalApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub "${AWS::StackName}-ApprovalApi"
-      StageName: !Ref Environment
+            RestApiId: !Ref ClaimsApi
 
   # SNS topic to notify when claims submitted, approved and rejected
   ClaimsNotificationTopic:
@@ -100,6 +93,6 @@ Resources:
 #      TopicArn: !Ref ClaimsNotificationTopic
 
 Outputs:
-  SubmitApiUrl:
-    Description: "Submission API Gateway URL"
-    Value: !Sub "https://${SubmissionApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+  ClaimsApiUrl:
+    Description: "Claims API Gateway URL"
+    Value: !Sub "https://${ClaimsApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"

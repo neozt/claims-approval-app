@@ -1,5 +1,5 @@
-import { SFNClient, SendTaskSuccessCommand } from "@aws-sdk/client-sfn";
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import {SendTaskSuccessCommand, SFNClient} from "@aws-sdk/client-sfn";
+import {DynamoDBClient, GetItemCommand} from "@aws-sdk/client-dynamodb";
 
 const sfnClient = new SFNClient({});
 const dynamoClient = new DynamoDBClient({});
@@ -17,14 +17,14 @@ export const handler = async (event) => {
         if (!isApproval && !isRejection) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ message: "Invalid endpoint. Use /approve or /reject." }),
+                body: JSON.stringify({message: "Invalid endpoint. Use /approve or /reject."}),
             };
         }
 
         if (!claimId) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ message: "Missing claimId in path." }),
+                body: JSON.stringify({message: "Missing claimId in path."}),
             };
         }
 
@@ -32,16 +32,16 @@ export const handler = async (event) => {
         const getItemCommand = new GetItemCommand({
             TableName: tableName,
             Key: {
-                "claim_id": { S: claimId }
+                "claim_id": {S: claimId}
             }
         });
-        
+
         const ddbResult = await dynamoClient.send(getItemCommand);
 
         if (!ddbResult.Item || !ddbResult.Item.task_token || !ddbResult.Item.task_token.S) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ message: "Claim not found or task token missing." }),
+                body: JSON.stringify({message: "Claim not found or task token missing."}),
             };
         }
 
@@ -91,8 +91,10 @@ export const handler = async (event) => {
 
         // Handle common SFN errors (e.g., TaskAlreadyCompleted or InvalidToken)
         return {
-            statusCode: 500,
-            message: "The link may have expired or already been processed",
+            statusCode: 404,
+            body: JSON.stringify({
+                message: "The link may have expired or already been processed",
+            })
         };
     }
 };
