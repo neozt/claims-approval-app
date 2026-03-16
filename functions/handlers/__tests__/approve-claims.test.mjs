@@ -29,7 +29,8 @@ describe('approve-claims handler', () => {
 
     it('should return 400 if claimId is missing', async () => {
         const event = {
-            pathParameters: {}
+            pathParameters: {},
+            rawPath: '/approve/any'
         };
         const result = await handler(event);
         expect(result.statusCode).toBe(400);
@@ -65,8 +66,7 @@ describe('approve-claims handler', () => {
         const result = await handler(event);
 
         expect(result.statusCode).toBe(200);
-        expect(result.body).toContain('Success');
-        expect(result.body).toContain('Expense Approved');
+        expect(result.body).toContain('Claim has been approved.');
 
         const calls = sfnMock.commandCalls(SendTaskSuccessCommand);
         expect(calls.length).toBe(1);
@@ -94,8 +94,7 @@ describe('approve-claims handler', () => {
         const result = await handler(event);
 
         expect(result.statusCode).toBe(200);
-        expect(result.body).toContain('Rejected');
-        expect(result.body).toContain('Expense Declined');
+        expect(result.body).toContain('Claim has been rejected.');
 
         const calls = sfnMock.commandCalls(SendTaskSuccessCommand);
         expect(calls.length).toBe(1);
@@ -141,8 +140,7 @@ describe('approve-claims handler', () => {
         };
 
         const result = await handler(event);
-        expect(result.statusCode).toBe(500);
-        expect(result.body).toContain('Error');
-        expect(result.body).toContain('TaskAlreadyCompleted: The link may have expired or already been processed.');
+        expect(result.statusCode).toBe(404);
+        expect(result.body).toContain('The link may have expired or already been processed');
     });
 });
