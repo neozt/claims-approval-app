@@ -14,6 +14,13 @@ export const handler = async (event) => {
         const isApproval = path.includes("/approve");
         const isRejection = path.includes("/reject");
 
+        if (!isApproval && !isRejection) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: "Invalid endpoint. Use /approve or /reject." }),
+            };
+        }
+
         if (!claimId) {
             return {
                 statusCode: 400,
@@ -52,8 +59,14 @@ export const handler = async (event) => {
                 output: output
             }));
 
-            return respondHtml("Success", "Expense Approved", "#2ecc71");
-        } else if (isRejection) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: "Claim has been approved.",
+                    claimId: claimId
+                }),
+            };
+        } else {
             const output = JSON.stringify({
                 status: "REJECTED",
                 approverEmail: "manager@company.com", // TODO
@@ -65,11 +78,12 @@ export const handler = async (event) => {
                 output: output
             }));
 
-            return respondHtml("Rejected", "Expense Declined", "#e74c3c");
-        } else {
             return {
-                statusCode: 404,
-                body: JSON.stringify({ message: "Invalid endpoint. Use /approve or /reject." }),
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: "Claim has been rejected.",
+                    claimId: claimId
+                }),
             };
         }
     } catch (error) {
@@ -78,24 +92,7 @@ export const handler = async (event) => {
         // Handle common SFN errors (e.g., TaskAlreadyCompleted or InvalidToken)
         return {
             statusCode: 500,
-            headers: { "Content-Type": "text/html" },
-            body: `<html><body><h2>Error</h2><p>${error.name}: The link may have expired or already been processed.</p></body></html>`
+            message: "The link may have expired or already been processed",
         };
     }
 };
-
-function respondHtml(title, message, color) {
-    return {
-        statusCode: 200,
-        headers: { "Content-Type": "text/html" },
-        body: `
-            <html>
-                <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                    <h1 style="color: ${color};">${title}</h1>
-                    <p>${message}</p>
-                    <small style="color: #666;">You can safely close this tab now.</small>
-                </body>
-            </html>
-        `
-    };
-}

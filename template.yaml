@@ -60,13 +60,13 @@ Resources:
           Type: Api
           Properties:
             Path: /approve/{claimId}
-            Method: get
+            Method: post
             RestApiId: !Ref ApprovalApi
         RejectApi:
           Type: Api
           Properties:
             Path: /reject/{claimId}
-            Method: get
+            Method: post
             RestApiId: !Ref ApprovalApi
 
   # API gateway to trigger ApproveClaimsFunction
