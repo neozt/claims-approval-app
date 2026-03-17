@@ -27,6 +27,7 @@
         }
     </style>
   </head>
+
   <body class="bg-light">
     <div class="container py-5" x-data="claimsPortal()" x-init="fetchClaims()" x-cloak>
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -126,11 +127,11 @@
                             throw new Error(data.message || `Failed to ${action} claim`);
                         }
 
-                        // Refresh the list
-                        await this.fetchClaims();
+                        this.claims = this.claims.filter(claim => claim.claimId.S !== claimId);
                     } catch (err) {
                         this.error = `Error performing ${action}: ` + err.message;
                         console.error(err);
+                    } finally {
                         this.loading = false;
                     }
                 }
