@@ -65,16 +65,16 @@
                     <td colspan="4" class="text-center py-4 text-muted">No pending claims found.</td>
                   </tr>
                 </template>
-                <template x-for="claim in claims" :key="claim.claimId">
+                <template x-for="claim in claims" :key="claim.claimId.S">
                   <tr>
-                    <td class="align-middle fw-bold" x-text="claim.claimId"></td>
-                    <td class="align-middle" x-text="'$' + claim.amount"></td>
-                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.description"></td>
+                    <td class="align-middle fw-bold" x-text="claim.claimId.S"></td>
+                    <td class="align-middle" x-text="'$' + claim.amount?.N"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status.S"></td>
                     <td class="text-end px-3">
-                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId)">
+                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId.S)">
                         Approve
                       </button>
-                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId)">Reject
+                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId.S)">Reject
                       </button>
                     </td>
                   </tr>
@@ -100,7 +100,7 @@
                     try {
                         const response = await fetch(`${this.apiUrl}/claims/pending-claims`);
                         if (!response.ok) throw new Error('Failed to fetch claims');
-                        this.claims = await response.json();
+                        this.claims = (await response.json()).data;
                     } catch (err) {
                         this.error = 'Error fetching claims: ' + err.message;
                         console.error(err);
