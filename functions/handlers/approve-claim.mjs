@@ -17,6 +17,11 @@ export const handler = async (event) => {
         if (!isApproval && !isRejection) {
             return {
                 statusCode: 404,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({message: "Invalid endpoint. Use /approve or /reject."}),
             };
         }
@@ -24,6 +29,11 @@ export const handler = async (event) => {
         if (!claimId) {
             return {
                 statusCode: 400,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({message: "Missing claimId in path."}),
             };
         }
@@ -41,6 +51,11 @@ export const handler = async (event) => {
         if (!ddbResult.Item || !ddbResult.Item.taskToken || !ddbResult.Item.taskToken.S) {
             return {
                 statusCode: 404,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({message: "Claim not found or task token missing."}),
             };
         }
@@ -61,6 +76,11 @@ export const handler = async (event) => {
 
             return {
                 statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({
                     message: "Claim has been approved.",
                     claimId: claimId
@@ -80,6 +100,11 @@ export const handler = async (event) => {
 
             return {
                 statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({
                     message: "Claim has been rejected.",
                     claimId: claimId
@@ -92,6 +117,11 @@ export const handler = async (event) => {
         // Handle common SFN errors (e.g., TaskAlreadyCompleted or InvalidToken)
         return {
             statusCode: 404,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
             body: JSON.stringify({
                 message: "The link may have expired or already been processed",
             })

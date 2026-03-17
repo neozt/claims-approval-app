@@ -15,6 +15,11 @@ export const handler = async (event) => {
         } catch (e) {
             return {
                 statusCode: 400,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({
                     message: "Request body cannot be empty",
                 }),
@@ -26,6 +31,11 @@ export const handler = async (event) => {
         if (amount === undefined || amount === null || !claimant) {
             return {
                 statusCode: 400,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                    "Access-Control-Allow-Headers": "Content-Type"
+                },
                 body: JSON.stringify({
                     message: "amount or claimant is missing",
                 }),
@@ -54,6 +64,11 @@ export const handler = async (event) => {
 
         return {
             statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
             body: JSON.stringify({
                 message: "Successfully submitted claim",
                 claimId: claimId,
@@ -64,6 +79,11 @@ export const handler = async (event) => {
 
         return {
             statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
             body: JSON.stringify({
                 message: "Something went wrong. Please try again later.",
             }),
