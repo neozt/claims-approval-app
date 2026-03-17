@@ -55,7 +55,8 @@
                 <tr>
                   <th>Claim ID</th>
                   <th>Amount</th>
-                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Requested By</th>
                   <th class="text-end">Actions</th>
                 </tr>
               </thead>
@@ -69,7 +70,8 @@
                   <tr>
                     <td class="align-middle fw-bold" x-text="claim.claimId.S"></td>
                     <td class="align-middle" x-text="'$' + claim.amount?.N"></td>
-                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status.S"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status?.S"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.claimant?.S"></td>
                     <td class="text-end px-3">
                       <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId.S)">
                         Approve
