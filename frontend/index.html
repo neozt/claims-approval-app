@@ -9,14 +9,22 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-      [x-cloak] { display: none !important; }
-      .loading-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255,255,255,0.7);
-        display: flex; justify-content: center; align-items: center;
-        z-index: 1000;
-      }
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
     </style>
   </head>
   <body class="bg-light">
@@ -34,7 +42,9 @@
       </div>
 
       <!-- Error Alert -->
-      <div class="alert alert-danger" role="alert" x-show="error" x-text="error" @click="error = null" style="cursor: pointer;"></div>
+      <div class="alert alert-danger" role="alert" x-show="error" x-text="error" @click="error = null"
+           style="cursor: pointer;">
+      </div>
 
       <!-- Claims Table -->
       <div class="card shadow-sm">
@@ -61,8 +71,11 @@
                     <td class="align-middle" x-text="'$' + claim.amount"></td>
                     <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.description"></td>
                     <td class="text-end px-3">
-                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId)">Approve</button>
-                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId)">Reject</button>
+                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId)">
+                        Approve
+                      </button>
+                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId)">Reject
+                      </button>
                     </td>
                   </tr>
                 </template>
@@ -74,53 +87,53 @@
     </div>
 
     <script>
-      function claimsPortal() {
-        return {
-          claims: [],
-          loading: false,
-          error: null,
-          apiUrl: '${ClaimsApiUrl}',
+        function claimsPortal() {
+            return {
+                claims: [],
+                loading: false,
+                error: null,
+                apiUrl: '${ClaimsApiUrl}',
 
-          async fetchClaims() {
-            this.loading = true;
-            this.error = null;
-            try {
-              const response = await fetch(`${this.apiUrl}/claims/pending-claims`);
-              if (!response.ok) throw new Error('Failed to fetch claims');
-              this.claims = await response.json();
-            } catch (err) {
-              this.error = 'Error fetching claims: ' + err.message;
-              console.error(err);
-            } finally {
-              this.loading = false;
-            }
-          },
+                async fetchClaims() {
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/claims/pending-claims`);
+                        if (!response.ok) throw new Error('Failed to fetch claims');
+                        this.claims = await response.json();
+                    } catch (err) {
+                        this.error = 'Error fetching claims: ' + err.message;
+                        console.error(err);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
 
-          async handleAction(action, claimId) {
-            if (!confirm(`Are you sure you want to ${action} claim ${claimId}?`)) return;
-            
-            this.loading = true;
-            this.error = null;
-            try {
-              const response = await fetch(`${this.apiUrl}/claims/${action}/${claimId}`, {
-                method: 'POST'
-              });
-              
-              if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || `Failed to ${action} claim`);
-              }
-              
-              // Refresh the list
-              await this.fetchClaims();
-            } catch (err) {
-              this.error = `Error performing ${action}: ` + err.message;
-              console.error(err);
-              this.loading = false;
+                async handleAction(action, claimId) {
+                    if (!confirm(`Are you sure you want to ${action} claim ${claimId}?`)) return;
+
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/claims/${action}/${claimId}`, {
+                            method: 'POST'
+                        });
+
+                        if (!response.ok) {
+                            const data = await response.json();
+                            throw new Error(data.message || `Failed to ${action} claim`);
+                        }
+
+                        // Refresh the list
+                        await this.fetchClaims();
+                    } catch (err) {
+                        this.error = `Error performing ${action}: ` + err.message;
+                        console.error(err);
+                        this.loading = false;
+                    }
+                }
             }
-          }
         }
-      }
     </script>
   </body>
 </html>
