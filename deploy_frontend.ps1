@@ -1,63 +1,41 @@
-# Get user input for stack name
-$stack_name = Read-Host "Enter the name of the CloudFormation stack:"
+param (
+    [string]$stack_name
+)
 
-# Get all stack outputs from CloudFormation
-Write-Host "Fetching outputs for stack: $stack_name..."
-$outputs_json = aws cloudformation describe-stacks --stack-name $stack_name --query "Stacks[0].Outputs" --output json
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to fetch stack outputs. Please check the stack name and your AWS credentials."
+# Get user input for stack name if not provided
+if (-not $stack_name) {
+    $stack_name = Read-Host "Enter the name of the CloudFormation stack"
+}
+
+# Run build script
+Write-Host "Starting build process..."
+. ./build_frontend.ps1 -stack_name $stack_name
+if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
+    Write-Error "Build failed. Deployment aborted."
     exit $LASTEXITCODE
 }
 
+# The build script returns the outputMap, so we can use it here
+# However, in PowerShell, the return value of a script called with '.' or '&' 
+# might need to be captured if we want to use variables directly.
+# For simplicity and robustness, let's fetch the outputs again or rely on the build script 
+# having set things correctly in dist/
+
+# Let's fetch outputs again to be safe and clear in this script
+Write-Host "Fetching outputs for deployment: $stack_name..."
+$outputs_json = aws cloudformation describe-stacks --stack-name $stack_name --query "Stacks[0].Outputs" --output json
 $outputs = $outputs_json | ConvertFrom-Json
 $outputMap = @{}
 foreach ($out in $outputs) {
     $outputMap[$out.OutputKey] = $out.OutputValue
 }
 
-# Extract specific values needed for deployment
-$api_gateway_endpoint = $outputMap["ClaimsApiUrl"]
 $cloudfront_distribution_id = $outputMap["CloudFrontDistributionId"]
 $s3_bucket_name = $outputMap["WebS3BucketName"]
 
 if (-not $s3_bucket_name -or -not $cloudfront_distribution_id) {
     Write-Error "Required outputs (WebS3BucketName or CloudFrontDistributionId) not found in stack."
     exit 1
-}
-
-# Output the results
-Write-Host "API Gateway URL: $api_gateway_endpoint"
-Write-Host "CloudFront Distribution ID: $cloudfront_distribution_id"
-Write-Host "S3 Bucket Name: $s3_bucket_name"
-
-# Prepare dist directory
-if (Test-Path "dist") {
-    Write-Host "Cleaning dist directory..."
-    Remove-Item -Path "dist" -Recurse -Force
-}
-New-Item -ItemType Directory -Path "dist" -Force
-
-Write-Host "Copying frontend files to dist..."
-Copy-Item -Path "frontend/*" -Destination "dist" -Recurse
-
-# Replace placeholders in every file in dist/
-Write-Host "Replacing placeholders with CloudFormation outputs..."
-$files = Get-ChildItem -Path "dist" -Recurse -File
-foreach ($file in $files) {
-    $content = Get-Content -Path $file.FullName -Raw
-    $modified = $false
-    foreach ($key in $outputMap.Keys) {
-        $placeholder = "`${$key}"
-        $value = $outputMap[$key]
-        if ($content.Contains($placeholder)) {
-            Write-Host "  Replacing $placeholder in $($file.Name)"
-            $content = $content.Replace($placeholder, $value)
-            $modified = $true
-        }
-    }
-    if ($modified) {
-        Set-Content -Path $file.FullName -Value $content
-    }
 }
 
 # Sync distribution with S3
@@ -76,4 +54,4 @@ aws cloudfront wait invalidation-completed --distribution-id $cloudfront_distrib
 $cloudfront_domain_name = aws cloudfront list-distributions --query "DistributionList.Items[?Id=='$cloudfront_distribution_id'].DomainName" --output text
 
 Write-Host "`nDeployment Complete!"
-Write-Host "Please visit your CloudFront URL to test: https://$cloudfront_domain_name"
+Write-Host "Please visit your CloudFront URL to test: https://$cloudfront_domain_name"
