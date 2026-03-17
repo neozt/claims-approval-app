@@ -13,6 +13,7 @@ Demo serverless project for claims submission and approval using AWS Step Functi
 2. Run `aws configure` to configure your access key and secret.
 3. Run `sam build` to build the application.
 4. Run `sam deploy --config-env <dev|prod>` to deploy the application to AWS.
+5. Run `.\deploy_frontend.ps1` to deploy the frontend website.
 
 ## How to teardown
 1. Run `sam delete --config-env <dev|prod>` to delete the SAM application.

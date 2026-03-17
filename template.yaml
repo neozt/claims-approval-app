@@ -135,7 +135,90 @@ Resources:
 #      Protocol: email
 #      TopicArn: !Ref ClaimsNotificationTopic
 
+  # S3 Bucket to host single page app website
+  WebSiteBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+  WebSiteBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref WebSiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: "PolicyForCloudFrontPrivateContent"
+        Statement:
+          - Sid: "AllowCloudFrontServicePrincipal"
+            Effect: "Allow"
+            Principal:
+              Service: "cloudfront.amazonaws.com"
+            Action: "s3:GetObject"
+            Resource: !Join [ "", [ "arn:aws:s3:::", !Ref WebSiteBucket, "/*" ] ]
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Join [ "", [ "arn:aws:cloudfront::", !Ref "AWS::AccountId", ":distribution/", !Ref CloudFrontDistribution ] ]
+
+  # CloudFront Distribution for hosting the single page app website
+  CloudFrontDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebSiteBucket.RegionalDomainName
+            Id: "myS3Origin"
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        Enabled: true
+        DefaultRootObject: "index.html"
+        HttpVersion: "http2"
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - "DELETE"
+            - "GET"
+            - "HEAD"
+            - "OPTIONS"
+            - "PATCH"
+            - "POST"
+            - "PUT"
+          CachedMethods:
+            - "GET"
+            - "HEAD"
+          TargetOriginId: "myS3Origin"
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: "none"
+          ViewerProtocolPolicy: "allow-all"
+          MinTTL: 0
+          DefaultTTL: 3600
+          MaxTTL: 86400
+        PriceClass: "PriceClass_200"
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+  CloudFrontOriginAccessControl:
+    Type: "AWS::CloudFront::OriginAccessControl"
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${WebSiteBucket} OAC"
+        OriginAccessControlOriginType: "s3"
+        SigningBehavior: "always"
+        SigningProtocol: "sigv4"
+
 Outputs:
   ClaimsApiUrl:
     Description: "Claims API Gateway URL"
     Value: !Sub "https://${ClaimsApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+  CloudFrontDistributionId:
+    Description: "CloudFront Distribution ID for hosting web front end"
+    Value: !Ref CloudFrontDistribution
+  CloudFrontDistributionDomainName:
+    Description: "CloudFront Distribution Domain Name for accessing web front end"
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  WebS3BucketName:
+    Description: "S3 Bucket for hosting web frontend"
+    Value: !Ref WebSiteBucket
