@@ -166,6 +166,32 @@ Resources:
               StringEquals:
                 "AWS:SourceArn": !Join [ "", [ "arn:aws:cloudfront::", !Ref "AWS::AccountId", ":distribution/", !Ref CloudFrontDistribution ] ]
 
+  # CloudFront Function to rewrite requests for subdirectory index.html files
+  CloudFrontIndexRewriterFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "${AWS::StackName}-IndexRewriter"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: "Rewrites subdirectory requests to /index.html"
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+            var request = event.request;
+            var uri = request.uri;
+            
+            // If the URI ends with '/', append 'index.html'
+            if (uri.endsWith('/')) {
+                request.uri += 'index.html';
+            } 
+            // If the URI doesn't have a '.' (no extension), append '/index.html'
+            else if (!uri.includes('.')) {
+                request.uri += '/index.html';
+            }
+
+            return request;
+        }
+
   # CloudFront Distribution for hosting the single page app website
   CloudFrontDistribution:
     Type: "AWS::CloudFront::Distribution"
@@ -201,6 +227,9 @@ Resources:
           MinTTL: 0
           DefaultTTL: 3600
           MaxTTL: 86400
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt CloudFrontIndexRewriterFunction.FunctionMetadata.FunctionARN
         PriceClass: "PriceClass_200"
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
