@@ -2,6 +2,10 @@
 
 Demo serverless project for claims submission and approval using AWS Step Functions and Lambda.
 
+## Architecture
+
+![Architecture](docs/architecture.drawio.png)
+
 ## Tech stack
 1. AWS Step Functions
 2. AWS Lambda
