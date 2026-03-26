@@ -10,7 +10,10 @@ Demo serverless project for claims submission and approval using AWS Step Functi
 1. AWS Step Functions
 2. AWS Lambda
 3. AWS API Gateway
-4. SAM
+4. DynamoDB
+5. SNS
+6. S3/CloudFront
+7. SAM
 
 ## How to deploy
 1. Make sure Node.js, Docker and SAM CLI are installed.
