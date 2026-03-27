@@ -16,8 +16,14 @@ Resources:
       StageName: !Ref Environment
       Cors:
         AllowMethods: "'OPTIONS, POST, GET'"
-        AllowHeaders: "'Content-Type'"
+        AllowHeaders: "'Content-Type,Authorization'"
         AllowOrigin: "'*'" # TODO Do not use this in Production
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+        AddDefaultAuthorizerToCorsPreflight: false
 
   # Step function to orchestrate the whole claims submission and approval flow
   ClaimsApprovalStateMachine:
@@ -139,6 +145,56 @@ Resources:
 #      Protocol: email
 #      TopicArn: !Ref ClaimsNotificationTopic
 
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-user-pool"
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub "${AWS::StackName}-client"
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      CallbackURLs:
+        - !Sub "https://${CloudFrontDistribution.DomainName}/index.html"
+        - !Sub "https://${CloudFrontDistribution.DomainName}/"
+        - "http://localhost:8080/index.html"
+        - "http://localhost:8080/"
+      LogoutURLs:
+        - !Sub "https://${CloudFrontDistribution.DomainName}/index.html"
+        - !Sub "https://${CloudFrontDistribution.DomainName}/"
+        - "http://localhost:8080/index.html"
+        - "http://localhost:8080/"
+
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub "${AWS::StackName}-${AWS::AccountId}"
+      UserPoolId: !Ref CognitoUserPool
+
   # S3 Bucket to host single page app website
   WebSiteBucket:
     Type: "AWS::S3::Bucket"
@@ -255,3 +311,9 @@ Outputs:
   WebS3BucketName:
     Description: "S3 Bucket for hosting web frontend"
     Value: !Ref WebSiteBucket
+  CognitoDomain:
+    Description: "Cognito User Pool Domain"
+    Value: !Sub "https://${CognitoUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+  CognitoClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref CognitoUserPoolClient
