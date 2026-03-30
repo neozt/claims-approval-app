@@ -1,287 +1,269 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Claims Portal</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claims Portal</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
 
-  <body class="bg-light">
-    <div class="container py-5" x-data="claimsPortal()" x-init="init()" x-cloak>
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Pending Claims Approval</h1>
-        <div>
-          <template x-if="isAuthenticated">
-            <div>
-              <button class="btn btn-outline-primary btn-sm me-2" @click="fetchClaims()">Refresh List</button>
-              <button class="btn btn-outline-danger btn-sm" @click="logout()">Logout</button>
-            </div>
-          </template>
-        </div>
-      </div>
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+  </style>
+</head>
 
-      <!-- Loading State -->
-      <div class="loading-overlay" x-show="loading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
-      <!-- Error Alert -->
-      <div class="alert alert-danger" role="alert" x-show="error" x-text="error" @click="error = null"
-           style="cursor: pointer;">
-      </div>
-
-      <!-- Login State -->
-      <template x-if="!isAuthenticated && !loading">
-        <div class="card shadow-sm text-center">
-          <div class="card-body py-5">
-            <h5 class="card-title mb-4">Authentication Required</h5>
-            <p class="card-text text-muted mb-4">Please log in to view and manage pending claims.</p>
-            <button class="btn btn-primary" @click="login()">Log In with Cognito</button>
+<body class="bg-light">
+  <div class="container py-5" x-data="claimsPortal" x-cloak>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">Pending Claims Approval</h1>
+      <div>
+        <template x-if="isAuthenticated">
+          <div>
+            <button class="btn btn-outline-primary btn-sm me-2" @click="fetchClaims()">Refresh List</button>
+            <button class="btn btn-outline-danger btn-sm" @click="logout()">Logout</button>
           </div>
-        </div>
-      </template>
-
-      <!-- Claims Table -->
-      <template x-if="isAuthenticated">
-        <div class="card shadow-sm">
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Claim ID</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Requested By</th>
-                    <th class="text-end">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <template x-if="claims.length === 0">
-                    <tr>
-                      <td colspan="5" class="text-center py-4 text-muted">No pending claims found.</td>
-                    </tr>
-                  </template>
-                  <template x-for="claim in claims" :key="claim.claimId.S">
-                    <tr>
-                      <td class="align-middle fw-bold" x-text="claim.claimId.S"></td>
-                      <td class="align-middle" x-text="'$' + claim.amount?.N"></td>
-                      <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status?.S"></td>
-                      <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.claimant?.S"></td>
-                      <td class="text-end px-3">
-                        <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId.S)">
-                          Approve
-                        </button>
-                        <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId.S)">Reject
-                        </button>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </template>
+        </template>
+      </div>
     </div>
 
-    <script>
-        // PKCE Utilities
-        function generateRandomString(length) {
-            var text = "";
-            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-            for (var i = 0; i < length; i++) {
-                text += possible.charAt(Math.floor(Math.random() * possible.length));
+    <!-- Loading State -->
+    <div class="loading-overlay" x-show="loading">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    <div class="alert alert-danger" role="alert" x-show="error" x-text="error" @click="error = null"
+      style="cursor: pointer;">
+    </div>
+
+    <!-- Login State -->
+    <template x-if="!isAuthenticated && !loading">
+      <div class="card shadow-sm text-center">
+        <div class="card-body py-5">
+          <h5 class="card-title mb-4">Authentication Required</h5>
+          <p class="card-text text-muted mb-4">Please log in to view and manage pending claims.</p>
+          <button class="btn btn-primary" @click="login()">Log In with Cognito</button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Claims Table -->
+    <template x-if="isAuthenticated">
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Claim ID</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Requested By</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="claims.length === 0">
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No pending claims found.</td>
+                  </tr>
+                </template>
+                <template x-for="claim in claims" :key="claim.claimId.S">
+                  <tr>
+                    <td class="align-middle fw-bold" x-text="claim.claimId.S"></td>
+                    <td class="align-middle" x-text="'$' + claim.amount?.N"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status?.S"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.claimant?.S"></td>
+                    <td class="text-end px-3">
+                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId.S)">
+                        Approve
+                      </button>
+                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId.S)">Reject
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <script type="module">
+    import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3.13.8/dist/module.esm.js';
+    import { UserManager, WebStorageStateStore } from 'https://cdn.jsdelivr.net/npm/oidc-client-ts@3.1.0/+esm';
+
+    const redirectUri = window.location.origin + window.location.pathname;
+
+    const userManager = new UserManager({
+      authority: '${CognitoAuthority}',
+      client_id: '${CognitoClientId}',
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      userStore: new WebStorageStateStore({ store: window.localStorage }),
+      metadata: {
+        issuer: '${CognitoAuthority}',
+        authorization_endpoint: '${CognitoDomain}/oauth2/authorize',
+        token_endpoint: '${CognitoDomain}/oauth2/token',
+        userinfo_endpoint: '${CognitoDomain}/oauth2/userInfo',
+        jwks_uri: '${CognitoAuthority}/.well-known/jwks.json'
+      },
+      mergeClaims: true,
+      loadUserInfo: false
+    });
+
+    // Register the data component before starting Alpine
+    Alpine.data('claimsPortal', () => ({
+      claims: [],
+      loading: false,
+      error: null,
+      apiUrl: '${ClaimsApiUrl}',
+      isAuthenticated: false,
+      idToken: null,
+
+      async init() {
+        this.loading = true;
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('code')) {
+            const user = await userManager.signinCallback();
+            this.idToken = user.id_token;
+            this.isAuthenticated = true;
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            const user = await userManager.getUser();
+            if (user && !user.expired) {
+              this.idToken = user.id_token;
+              this.isAuthenticated = true;
             }
-            return text;
+          }
+
+          if (this.isAuthenticated) {
+            await this.fetchClaims();
+          }
+        } catch (err) {
+          this.error = 'Authentication error: ' + err.message;
+          console.error(err);
+        } finally {
+          this.loading = false;
         }
+      },
 
-        async function generateCodeChallenge(codeVerifier) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(codeVerifier);
-            const digest = await window.crypto.subtle.digest('SHA-256', data);
-            const base64Digest = btoa(String.fromCharCode(...new Uint8Array(digest)))
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/, '');
-            return base64Digest;
+      async login() {
+        try {
+          await userManager.signinRedirect();
+        } catch (err) {
+          this.error = 'Failed to redirect to login: ' + err.message;
+          console.error(err);
         }
+      },
 
-        function claimsPortal() {
-            return {
-                claims: [],
-                loading: false,
-                error: null,
-                apiUrl: '${ClaimsApiUrl}',
-                cognitoDomain: '${CognitoDomain}',
-                clientId: '${CognitoClientId}',
-                isAuthenticated: false,
-                idToken: null,
+      async logout() {
+        try {
+          await userManager.removeUser();
+          this.isAuthenticated = false;
+          this.idToken = null;
+          const logoutUri = encodeURIComponent(window.location.origin + window.location.pathname);
+          window.location.href = `${'${CognitoDomain}'}/logout?client_id=${'${CognitoClientId}'}&logout_uri=${logoutUri}`;
+        } catch (err) {
+          this.error = 'Failed to logout: ' + err.message;
+          console.error(err);
+        }
+      },
 
-                async init() {
-                    this.loading = true;
-                    // Check if coming back from login with code
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const code = urlParams.get('code');
+      async fetchClaims() {
+        this.loading = true;
+        this.error = null;
+        try {
+          const user = await userManager.getUser();
+          if (!user || user.expired) {
+            this.logout();
+            return;
+          }
 
-                    if (code) {
-                        try {
-                            await this.exchangeToken(code);
-                            // Clean up url
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                        } catch (err) {
-                            this.error = 'Login failed: ' + err.message;
-                            console.error(err);
-                        }
-                    } else {
-                        // Check if already authenticated via storage
-                        const storedToken = localStorage.getItem('id_token');
-                        if (storedToken) {
-                            this.idToken = storedToken;
-                            this.isAuthenticated = true;
-                        }
-                    }
-                    
-                    if (this.isAuthenticated) {
-                        await this.fetchClaims();
-                    }
-                    this.loading = false;
-                },
-
-                async login() {
-                    const codeVerifier = generateRandomString(128);
-                    sessionStorage.setItem('code_verifier', codeVerifier);
-                    const codeChallenge = await generateCodeChallenge(codeVerifier);
-                    const redirectUri = window.location.origin + window.location.pathname;
-
-                    const loginUrl = `${this.cognitoDomain}/login?client_id=${this.clientId}&response_type=code&scope=openid+email+profile&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-                    window.location.href = loginUrl;
-                },
-
-                logout() {
-                    localStorage.removeItem('id_token');
-                    localStorage.removeItem('access_token');
-                    sessionStorage.removeItem('code_verifier');
-                    this.isAuthenticated = false;
-                    this.idToken = null;
-                    const redirectUri = window.location.origin + window.location.pathname;
-                    window.location.href = `${this.cognitoDomain}/logout?client_id=${this.clientId}&logout_uri=${encodeURIComponent(redirectUri)}`;
-                },
-
-                async exchangeToken(code) {
-                    const codeVerifier = sessionStorage.getItem('code_verifier');
-                    if (!codeVerifier) throw new Error("No code verifier found");
-                    const redirectUri = window.location.origin + window.location.pathname;
-
-                    const body = new URLSearchParams({
-                        grant_type: 'authorization_code',
-                        client_id: this.clientId,
-                        code: code,
-                        redirect_uri: redirectUri,
-                        code_verifier: codeVerifier
-                    });
-
-                    const response = await fetch(`${this.cognitoDomain}/oauth2/token`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: body
-                    });
-
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.error_description || 'Token exchange failed');
-                    }
-
-                    const data = await response.json();
-                    this.idToken = data.id_token;
-                    localStorage.setItem('id_token', data.id_token);
-                    localStorage.setItem('access_token', data.access_token);
-                    sessionStorage.removeItem('code_verifier');
-                    this.isAuthenticated = true;
-                },
-
-                async fetchClaims() {
-                    this.loading = true;
-                    this.error = null;
-                    try {
-                        const response = await fetch(`${this.apiUrl}/claims/pending-claims`, {
-                            headers: {
-                                'Authorization': `Bearer ${this.idToken}`
-                            }
-                        });
-                        if (response.status === 401) {
-                            this.logout();
-                            return;
-                        }
-                        if (!response.ok) throw new Error('Failed to fetch claims');
-                        this.claims = (await response.json()).data;
-                    } catch (err) {
-                        this.error = 'Error fetching claims: ' + err.message;
-                        console.error(err);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                async handleAction(action, claimId) {
-                    if (!confirm(`Are you sure you want to ${action} claim ${claimId}?`)) return;
-
-                    this.loading = true;
-                    this.error = null;
-                    try {
-                        const response = await fetch(`${this.apiUrl}/claims/${action}/${claimId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${this.idToken}`
-                            }
-                        });
-
-                        if (response.status === 401) {
-                            this.logout();
-                            return;
-                        }
-
-                        if (!response.ok) {
-                            const data = await response.json();
-                            throw new Error(data.message || `Failed to ${action} claim`);
-                        }
-
-                        this.claims = this.claims.filter(claim => claim.claimId.S !== claimId);
-                    } catch (err) {
-                        this.error = `Error performing ${action}: ` + err.message;
-                        console.error(err);
-                    } finally {
-                        this.loading = false;
-                    }
-                }
+          const response = await fetch(`${this.apiUrl}/claims/pending-claims`, {
+            headers: {
+              'Authorization': `Bearer ${user.id_token}`
             }
+          });
+
+          if (response.status === 401) {
+            this.logout();
+            return;
+          }
+          if (!response.ok) throw new Error('Failed to fetch claims');
+          this.claims = (await response.json()).data;
+        } catch (err) {
+          this.error = 'Error fetching claims: ' + err.message;
+          console.error(err);
+        } finally {
+          this.loading = false;
         }
-    </script>
-  </body>
+      },
+
+      async handleAction(action, claimId) {
+        if (!confirm(`Are you sure you want to ${action} claim ${claimId}?`)) return;
+
+        this.loading = true;
+        this.error = null;
+        try {
+          const user = await userManager.getUser();
+          if (!user || user.expired) {
+            this.logout();
+            return;
+          }
+
+          const response = await fetch(`${this.apiUrl}/claims/${action}/${claimId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${user.id_token}`
+            }
+          });
+
+          if (response.status === 401) {
+            this.logout();
+            return;
+          }
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || `Failed to ${action} claim`);
+          }
+
+          this.claims = this.claims.filter(claim => claim.claimId.S !== claimId);
+        } catch (err) {
+          this.error = `Error performing ${action}: ` + err.message;
+          console.error(err);
+        } finally {
+          this.loading = false;
+        }
+      }
+    }));
+
+    // Expose Alpine to window and start it
+    window.Alpine = Alpine;
+    Alpine.start();
+  </script>
+</body>
+
 </html>

@@ -317,3 +317,6 @@ Outputs:
   CognitoClientId:
     Description: "Cognito User Pool Client ID"
     Value: !Ref CognitoUserPoolClient
+  CognitoAuthority:
+    Description: "Cognito OIDC Authority URL"
+    Value: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
