@@ -45,7 +45,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-SubmitClaimsFunction"
-      Handler: functions/handlers/submit-claim.handler
+      CodeUri: functions/submit-claim
+      Handler: submit-claim.handler
       Runtime: nodejs24.x
       Architectures:
         - arm64
@@ -65,13 +66,20 @@ Resources:
             Path: /claims
             Method: post
             RestApiId: !Ref ClaimsApi
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
 
   # Lambda function to handle manual approvals and rejections
   ApproveClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-ApproveClaimsFunction"
-      Handler: functions/handlers/approve-claim.handler
+      CodeUri: functions/approve-claim/
+      Handler: approve-claim.handler
       Runtime: nodejs24.x
       Architectures:
         - arm64
@@ -99,12 +107,19 @@ Resources:
             Path: /claims/reject/{claimId}
             Method: post
             RestApiId: !Ref ClaimsApi
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
 
   ListPendingClaimsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-ListPendingClaimsFunction"
-      Handler: functions/handlers/list-pending-claims.handler
+      CodeUri: functions/list-pending-claims
+      Handler: list-pending-claims.handler
       Runtime: nodejs24.x
       Architectures:
         - arm64
@@ -121,6 +136,12 @@ Resources:
             Path: /claims/pending-claims
             Method: get
             RestApiId: !Ref ClaimsApi
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
 
   # SNS topic to notify when claims submitted, approved and rejected
   ClaimsNotificationTopic:

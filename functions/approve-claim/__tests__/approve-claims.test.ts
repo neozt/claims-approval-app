@@ -1,4 +1,4 @@
-import { handler } from '../approve-claim.mjs';
+import { handler } from '../approve-claim';
 import { SFNClient, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
