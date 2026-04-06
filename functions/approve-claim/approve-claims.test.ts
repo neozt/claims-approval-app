@@ -3,7 +3,7 @@ import { handler } from './approve-claim';
 import { SendTaskSuccessCommand, SFNClient } from '@aws-sdk/client-sfn';
 import { mockClient } from 'aws-sdk-client-mock';
 import { jest } from '@jest/globals';
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 
 const sfnMock = mockClient(SFNClient);
 const docMock = mockClient(DynamoDBDocumentClient);
@@ -42,7 +42,7 @@ describe('approve-claim handler', () => {
         docMock.on(GetCommand).resolves({});
 
         const event = {
-            pathParameters: {claimId: 'non-existent'},
+            pathParameters: { claimId: 'non-existent' },
             path: '/approve/non-existent',
         } as unknown as APIGatewayProxyEvent;
 
@@ -60,7 +60,7 @@ describe('approve-claim handler', () => {
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
-            pathParameters: {claimId: '12345'},
+            pathParameters: { claimId: '12345' },
             path: '/approve/12345',
         } as unknown as APIGatewayProxyEvent;
 
@@ -88,7 +88,7 @@ describe('approve-claim handler', () => {
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
-            pathParameters: {claimId: '12345'},
+            pathParameters: { claimId: '12345' },
             path: '/reject/12345',
         } as unknown as APIGatewayProxyEvent;
 
@@ -115,7 +115,7 @@ describe('approve-claim handler', () => {
         });
 
         const event = {
-            pathParameters: {claimId: '12345'},
+            pathParameters: { claimId: '12345' },
             path: '/other/12345',
         } as unknown as APIGatewayProxyEvent;
 
@@ -136,7 +136,7 @@ describe('approve-claim handler', () => {
         sfnMock.on(SendTaskSuccessCommand).rejects(mockError);
 
         const event = {
-            pathParameters: {claimId: '12345'},
+            pathParameters: { claimId: '12345' },
             path: '/approve/12345',
         } as unknown as APIGatewayProxyEvent;
 
