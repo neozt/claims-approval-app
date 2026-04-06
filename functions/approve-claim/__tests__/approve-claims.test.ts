@@ -1,18 +1,18 @@
 import { handler } from '../approve-claim';
-import { SFNClient, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { SendTaskSuccessCommand, SFNClient } from '@aws-sdk/client-sfn';
 import { mockClient } from 'aws-sdk-client-mock';
 import { jest } from '@jest/globals';
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
 const sfnMock = mockClient(SFNClient);
-const ddbMock = mockClient(DynamoDBClient);
+const docMock = mockClient(DynamoDBDocumentClient);
 
 describe('approve-claim handler', () => {
     let dateSpy;
 
     beforeEach(() => {
         sfnMock.reset();
-        ddbMock.reset();
+        docMock.reset();
 
         process.env.DYNAMODB_TABLE_NAME = 'MockTable';
 
@@ -38,10 +38,10 @@ describe('approve-claim handler', () => {
     });
 
     it('should return 404 if claim is not found in DDB', async () => {
-        ddbMock.on(GetItemCommand).resolves({});
+        docMock.on(GetCommand).resolves({});
 
         const event = {
-            pathParameters: { claimId: 'non-existent' },
+            pathParameters: {claimId: 'non-existent'},
             rawPath: '/approve/non-existent',
         };
 
@@ -51,15 +51,15 @@ describe('approve-claim handler', () => {
     });
 
     it('should approve path including /approve', async () => {
-        ddbMock.on(GetItemCommand).resolves({
+        docMock.on(GetCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' },
+                taskToken: 'sample-token',
             },
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
-            pathParameters: { claimId: '12345' },
+            pathParameters: {claimId: '12345'},
             rawPath: '/approve/12345',
         };
 
@@ -79,15 +79,15 @@ describe('approve-claim handler', () => {
     });
 
     it('should reject path including /reject', async () => {
-        ddbMock.on(GetItemCommand).resolves({
+        docMock.on(GetCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' },
+                taskToken: 'sample-token',
             },
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
-            pathParameters: { claimId: '12345' },
+            pathParameters: {claimId: '12345'},
             path: '/reject/12345',
         };
 
@@ -107,14 +107,14 @@ describe('approve-claim handler', () => {
     });
 
     it('should return 404 for invalid endpoint', async () => {
-        ddbMock.on(GetItemCommand).resolves({
+        docMock.on(GetCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' },
+                taskToken: 'sample-token',
             },
         });
 
         const event = {
-            pathParameters: { claimId: '12345' },
+            pathParameters: {claimId: '12345'},
             rawPath: '/other/12345',
         };
 
@@ -124,9 +124,9 @@ describe('approve-claim handler', () => {
     });
 
     it('should return 500 on SFNClient error', async () => {
-        ddbMock.on(GetItemCommand).resolves({
+        docMock.on(GetCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' },
+                taskToken: 'sample-token',
             },
         });
 
@@ -135,7 +135,7 @@ describe('approve-claim handler', () => {
         sfnMock.on(SendTaskSuccessCommand).rejects(mockError);
 
         const event = {
-            pathParameters: { claimId: '12345' },
+            pathParameters: {claimId: '12345'},
             rawPath: '/approve/12345',
         };
 

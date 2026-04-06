@@ -1,8 +1,10 @@
 import { SendTaskSuccessCommand, SFNClient } from '@aws-sdk/client-sfn';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
 const sfnClient = new SFNClient({});
 const dynamoClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (event) => {
     console.log('Received event:', JSON.stringify(event));
@@ -39,16 +41,18 @@ export const handler = async (event) => {
         }
 
         const tableName = process.env.DYNAMODB_TABLE_NAME;
-        const getItemCommand = new GetItemCommand({
+        const getItemCommand = new GetCommand({
             TableName: tableName,
             Key: {
-                claimId: { S: claimId },
+                claimId: claimId,
             },
         });
 
-        const ddbResult = await dynamoClient.send(getItemCommand);
+        const ddbResult = await docClient.send(getItemCommand);
 
-        if (!ddbResult.Item || !ddbResult.Item.taskToken || !ddbResult.Item.taskToken.S) {
+        const taskToken = ddbResult.Item?.taskToken;
+
+        if (!taskToken) {
             return {
                 statusCode: 404,
                 headers: {
@@ -59,8 +63,6 @@ export const handler = async (event) => {
                 body: JSON.stringify({ message: 'Claim not found or task token missing.' }),
             };
         }
-
-        const taskToken = ddbResult.Item.taskToken.S;
 
         if (isApproval) {
             const output = JSON.stringify({
