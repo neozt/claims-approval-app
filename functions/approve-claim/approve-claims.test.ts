@@ -1,4 +1,5 @@
-import { handler } from '../approve-claim';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import { handler } from './approve-claim';
 import { SendTaskSuccessCommand, SFNClient } from '@aws-sdk/client-sfn';
 import { mockClient } from 'aws-sdk-client-mock';
 import { jest } from '@jest/globals';
@@ -8,7 +9,7 @@ const sfnMock = mockClient(SFNClient);
 const docMock = mockClient(DynamoDBDocumentClient);
 
 describe('approve-claim handler', () => {
-    let dateSpy;
+    let dateSpy: any;
 
     beforeEach(() => {
         sfnMock.reset();
@@ -30,8 +31,8 @@ describe('approve-claim handler', () => {
     it('should return 400 if claimId is missing', async () => {
         const event = {
             pathParameters: {},
-            rawPath: '/approve/any',
-        };
+            path: '/approve/any',
+        } as unknown as APIGatewayProxyEvent;
         const result = await handler(event);
         expect(result.statusCode).toBe(400);
         expect(JSON.parse(result.body).message).toBe('Missing claimId in path.');
@@ -42,8 +43,8 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: {claimId: 'non-existent'},
-            rawPath: '/approve/non-existent',
-        };
+            path: '/approve/non-existent',
+        } as unknown as APIGatewayProxyEvent;
 
         const result = await handler(event);
         expect(result.statusCode).toBe(404);
@@ -60,8 +61,8 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: {claimId: '12345'},
-            rawPath: '/approve/12345',
-        };
+            path: '/approve/12345',
+        } as unknown as APIGatewayProxyEvent;
 
         const result = await handler(event);
 
@@ -70,7 +71,7 @@ describe('approve-claim handler', () => {
 
         const calls = sfnMock.commandCalls(SendTaskSuccessCommand);
         expect(calls.length).toBe(1);
-        const args = calls[0].args[0].input;
+        const args = calls[0].args[0].input as any;
         expect(args.taskToken).toBe('sample-token');
         const output = JSON.parse(args.output);
         expect(output.status).toBe('APPROVED');
@@ -89,7 +90,7 @@ describe('approve-claim handler', () => {
         const event = {
             pathParameters: {claimId: '12345'},
             path: '/reject/12345',
-        };
+        } as unknown as APIGatewayProxyEvent;
 
         const result = await handler(event);
 
@@ -98,7 +99,7 @@ describe('approve-claim handler', () => {
 
         const calls = sfnMock.commandCalls(SendTaskSuccessCommand);
         expect(calls.length).toBe(1);
-        const args = calls[0].args[0].input;
+        const args = calls[0].args[0].input as any;
         expect(args.taskToken).toBe('sample-token');
         const output = JSON.parse(args.output);
         expect(output.status).toBe('REJECTED');
@@ -115,8 +116,8 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: {claimId: '12345'},
-            rawPath: '/other/12345',
-        };
+            path: '/other/12345',
+        } as unknown as APIGatewayProxyEvent;
 
         const result = await handler(event);
         expect(result.statusCode).toBe(404);
@@ -136,8 +137,8 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: {claimId: '12345'},
-            rawPath: '/approve/12345',
-        };
+            path: '/approve/12345',
+        } as unknown as APIGatewayProxyEvent;
 
         const result = await handler(event);
         expect(result.statusCode).toBe(404);
