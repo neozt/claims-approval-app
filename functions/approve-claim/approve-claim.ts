@@ -1,3 +1,4 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { SendTaskSuccessCommand, SFNClient } from '@aws-sdk/client-sfn';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
@@ -6,13 +7,13 @@ const sfnClient = new SFNClient({});
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
-export const handler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log('Received event:', JSON.stringify(event));
 
     try {
         const claimId = event.pathParameters?.claimId;
 
-        const path = event.rawPath || event.path || '';
+        const path = event.path ?? '';
         const isApproval = path.includes('/approve');
         const isRejection = path.includes('/reject');
 
@@ -40,7 +41,7 @@ export const handler = async (event) => {
             };
         }
 
-        const tableName = process.env.DYNAMODB_TABLE_NAME;
+        const tableName = process.env.DYNAMODB_TABLE_NAME!;
         const getItemCommand = new GetCommand({
             TableName: tableName,
             Key: {
@@ -50,7 +51,7 @@ export const handler = async (event) => {
 
         const ddbResult = await docClient.send(getItemCommand);
 
-        const taskToken = ddbResult.Item?.taskToken;
+        const taskToken = ddbResult.Item?.taskToken as string | undefined;
 
         if (!taskToken) {
             return {

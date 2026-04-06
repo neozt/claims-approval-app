@@ -1,14 +1,15 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommandOutput, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
-export const handler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log('Received event:', JSON.stringify(event));
 
     try {
-        const tableName = process.env.DYNAMODB_TABLE_NAME;
+        const tableName = process.env.DYNAMODB_TABLE_NAME!;
         const scanItemCommand = new ScanCommand({
             TableName: tableName,
             FilterExpression: '#status = :status',

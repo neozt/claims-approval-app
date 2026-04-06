@@ -1,9 +1,9 @@
-import { SendTaskSuccessCommand, SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 
 const sfnClient = new SFNClient({});
 
-export const handler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log('Received event:', JSON.stringify(event));
 
     try {
@@ -11,7 +11,7 @@ export const handler = async (event) => {
 
         let requestBody;
         try {
-            requestBody = JSON.parse(event.body);
+            requestBody = JSON.parse(event.body!);
         } catch (e) {
             return {
                 statusCode: 400,
@@ -50,7 +50,7 @@ export const handler = async (event) => {
         };
 
         const commandInput = {
-            stateMachineArn: process.env.STATE_MACHINE_ARN,
+            stateMachineArn: process.env.STATE_MACHINE_ARN!,
             name: claimId,
             input: JSON.stringify(input),
         };
