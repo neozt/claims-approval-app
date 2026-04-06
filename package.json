@@ -1,6 +1,6 @@
 {
-    "name": "delete-test-01",
-    "description": "delete-test-01-description",
+    "name": "claims-approval-app",
+    "description": "claims-approval-app",
     "version": "0.0.1",
     "private": true,
     "dependencies": {
