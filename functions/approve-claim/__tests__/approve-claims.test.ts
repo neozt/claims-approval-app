@@ -30,7 +30,7 @@ describe('approve-claim handler', () => {
     it('should return 400 if claimId is missing', async () => {
         const event = {
             pathParameters: {},
-            rawPath: '/approve/any'
+            rawPath: '/approve/any',
         };
         const result = await handler(event);
         expect(result.statusCode).toBe(400);
@@ -42,7 +42,7 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: { claimId: 'non-existent' },
-            rawPath: '/approve/non-existent'
+            rawPath: '/approve/non-existent',
         };
 
         const result = await handler(event);
@@ -53,14 +53,14 @@ describe('approve-claim handler', () => {
     it('should approve path including /approve', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' }
-            }
+                taskToken: { S: 'sample-token' },
+            },
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
             pathParameters: { claimId: '12345' },
-            rawPath: '/approve/12345'
+            rawPath: '/approve/12345',
         };
 
         const result = await handler(event);
@@ -81,14 +81,14 @@ describe('approve-claim handler', () => {
     it('should reject path including /reject', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' }
-            }
+                taskToken: { S: 'sample-token' },
+            },
         });
         sfnMock.on(SendTaskSuccessCommand).resolves({});
 
         const event = {
             pathParameters: { claimId: '12345' },
-            path: '/reject/12345'
+            path: '/reject/12345',
         };
 
         const result = await handler(event);
@@ -109,13 +109,13 @@ describe('approve-claim handler', () => {
     it('should return 404 for invalid endpoint', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' }
-            }
+                taskToken: { S: 'sample-token' },
+            },
         });
 
         const event = {
             pathParameters: { claimId: '12345' },
-            rawPath: '/other/12345'
+            rawPath: '/other/12345',
         };
 
         const result = await handler(event);
@@ -126,8 +126,8 @@ describe('approve-claim handler', () => {
     it('should return 500 on SFNClient error', async () => {
         ddbMock.on(GetItemCommand).resolves({
             Item: {
-                taskToken: { S: 'sample-token' }
-            }
+                taskToken: { S: 'sample-token' },
+            },
         });
 
         const mockError = new Error('TaskAlreadyCompleted');
@@ -136,7 +136,7 @@ describe('approve-claim handler', () => {
 
         const event = {
             pathParameters: { claimId: '12345' },
-            rawPath: '/approve/12345'
+            rawPath: '/approve/12345',
         };
 
         const result = await handler(event);
