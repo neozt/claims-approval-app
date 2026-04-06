@@ -1,6 +1,8 @@
-import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, ScanCommandOutput, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const dynamoClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (event) => {
     console.log('Received event:', JSON.stringify(event));
@@ -14,14 +16,12 @@ export const handler = async (event) => {
                 '#status': 'status',
             },
             ExpressionAttributeValues: {
-                ':status': {
-                    S: 'PENDING_APPROVE',
-                },
+                ':status': 'PENDING_APPROVE',
             },
             ProjectionExpression: '#status, claimId, claimDetails, amount, claimant',
         });
 
-        const result = await dynamoClient.send(scanItemCommand);
+        const result: ScanCommandOutput = await docClient.send(scanItemCommand);
 
         return {
             statusCode: 200,

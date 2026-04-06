@@ -85,17 +85,17 @@
                     <td colspan="5" class="text-center py-4 text-muted">No pending claims found.</td>
                   </tr>
                 </template>
-                <template x-for="claim in claims" :key="claim.claimId.S">
+                <template x-for="claim in claims" :key="claim.claimId">
                   <tr>
-                    <td class="align-middle fw-bold" x-text="claim.claimId.S"></td>
-                    <td class="align-middle" x-text="'$' + claim.amount?.N"></td>
-                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status?.S"></td>
-                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.claimant?.S"></td>
+                    <td class="align-middle fw-bold" x-text="claim.claimId"></td>
+                    <td class="align-middle" x-text="'$' + claim.amount"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.status"></td>
+                    <td class="align-middle text-truncate" style="max-width: 300px;" x-text="claim.claimant"></td>
                     <td class="text-end px-3">
-                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId.S)">
+                      <button class="btn btn-success btn-sm me-2" @click="handleAction('approve', claim.claimId)">
                         Approve
                       </button>
-                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId.S)">Reject
+                      <button class="btn btn-danger btn-sm" @click="handleAction('reject', claim.claimId)">Reject
                       </button>
                     </td>
                   </tr>
@@ -250,7 +250,7 @@
             throw new Error(data.message || `Failed to ${action} claim`);
           }
 
-          this.claims = this.claims.filter(claim => claim.claimId.S !== claimId);
+          this.claims = this.claims.filter(claim => claim.claimId !== claimId);
         } catch (err) {
           this.error = `Error performing ${action}: ` + err.message;
           console.error(err);
